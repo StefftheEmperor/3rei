@@ -16,6 +16,7 @@ class AbstractModel extends \AbstractModel {
 	private $table = NULL;
 	protected $table_name = NULL;
 	protected $primary_key = NULL;
+	protected $is_new = TRUE;
 	final public function __construct()
 	{
 		$this->init_table();
@@ -58,6 +59,43 @@ class AbstractModel extends \AbstractModel {
 	{
 		return $this->table;
 	}
+
+	public function is_new($value = NULL)
+	{
+		if (isset($value))
+		{
+			$this->is_new = $value;
+
+			return $this;
+		} else {
+			return $this->is_new;
+		}
+	}
+
+	public function get_primary_key()
+	{
+		$primary_key = $this->get_table()->get_primary_key();
+
+		return $this->__get($primary_key);
+	}
+
+	public function get_primary_id()
+	{
+		return $this->get_primary_key();
+	}
+	
+	public function set_primary_key($value)
+	{
+		$primary_key = $this->get_table()->get_primary_key();
+
+		return $this->__set($primary_key, $value);
+	}
+
+	public function set_primary_id($value)
+	{
+		return $this->set_primary_key($value);
+	}
+
 	public function save()
 	{
 		$filter = new Filter($this->get_table()->get_primary_key(), '=', $this->__get($this->get_table()->get_primary_key()));

@@ -52,9 +52,9 @@ class Statement implements \Iterator, \Countable {
 		$current_row = $this->pdo_statement->fetch(\PDO::FETCH_ASSOC);
 
 		if ($current_row === FALSE) {
-			$current = new \Db\Result;
+			$current = new \Db\Result($this);
 		} else {
-			$current = new \Db\Result;
+			$current = new \Db\Result($this);
 			foreach ($current_row as $key => $value)
 			{
 				$current->{'set_'.strtolower($key)}($value);

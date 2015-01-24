@@ -16,10 +16,12 @@ class Url {
 	private $rewrite = NULL;
 	public static function get_instance($url = null)
 	{
+
 		return new static($url);
 	}
 	public function __construct($url = null)
 	{
+
 		if ($url === null) {
 			$url = 'http://'.$_SERVER['SERVER_NAME'].$_SERVER['REQUEST_URI'];
 		}
@@ -39,7 +41,6 @@ class Url {
 		if (isset($url_components['query'])) {
 			parse_str($url_components['query'], $this->params);
 		}
-
 
 		$this->rewrite = \Model\Rewrite::factory_by_url($this);
 

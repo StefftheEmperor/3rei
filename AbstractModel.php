@@ -80,6 +80,10 @@ abstract class AbstractModel implements ArrayAccess, Iterator {
 		return $key !== FALSE;
 	}
 
+	public function get_table()
+	{
+		return new \Db\Table($this->__get('table'));
+	}
 	public function offsetSet($offset, $value)
 	{
 
@@ -94,6 +98,8 @@ abstract class AbstractModel implements ArrayAccess, Iterator {
 
 				$this->keys[] = $offset;
 				$this->values[] = $value;
+				end($this->keys);
+				$key = key($this->keys);
 			}
 			$this->changed_keys[] = $key;
 		}
