@@ -43,16 +43,12 @@ abstract class AbstractModel implements \ArrayAccess, \Iterator {
 
 		if (($key !== FALSE) AND isset($this->values[$key])) {
 			return $this->values[$key];
-		} else {
-
-			if (in_array($offset, $this->available_keys))
-			{
+		} elseif (in_array($offset, $this->available_keys))
+		{
 				return NULL;
-			} else {
-				throw new \Debug\CustomException('Undefined offset: ' . get_called_class() . '[' . $offset . ']');
-			}
+		} else {
+				throw new \Debug\Classes\CustomException('Undefined offset: ' . get_called_class() . '[' . $offset . ']');
 		}
-
 	}
 
 	public function current()
@@ -73,6 +69,7 @@ abstract class AbstractModel implements \ArrayAccess, \Iterator {
 			$this->changed_keys[] = $key;
 			unset($this->keys[$key]);
 			unset($this->values[$key]);
+			$this->remove_available_key($offset);
 		}
 	}
 
@@ -88,6 +85,10 @@ abstract class AbstractModel implements \ArrayAccess, \Iterator {
 	}
 	public function offsetSet($offset, $value)
 	{
+		if (is_string($offset) && intval($offset) == $offset AND ((intval($offset) > 0) OR ($offset === '0')))
+		{
+			$offset = intval($offset);
+		}
 
 		$key = $this->getKeyByOffset($offset);
 
@@ -99,9 +100,9 @@ abstract class AbstractModel implements \ArrayAccess, \Iterator {
 			if ($key !== FALSE) {
 				$this->values[$key] = $value;
 			} else {
-
 				$this->keys[] = $offset;
 				$this->values[] = $value;
+				$this->add_available_key($offset);
 				end($this->keys);
 				$key = key($this->keys);
 				if (is_int($offset))
@@ -142,7 +143,7 @@ abstract class AbstractModel implements \ArrayAccess, \Iterator {
 			return call_user_func_array(array($this, '__set'), $arguments);
 
 		} else {
-			throw new \Debug\CustomException('Call to undefined method: '.get_called_class().'::'.$method);
+			throw new \Debug\Classes\CustomException('Call to undefined method: '.get_called_class().'::'.$method);
 		}
 	}
 	public function __unset($offset)
@@ -162,7 +163,7 @@ abstract class AbstractModel implements \ArrayAccess, \Iterator {
 		$this->values[] = $value;
 		$next_numeric_key = $this->get_next_numeric_key();
 		$this->keys[] = $next_numeric_key;
-
+		$this->add_available_key($next_numeric_key);
 		$this->check_numeric_key($next_numeric_key);
 	}
 
@@ -185,6 +186,16 @@ abstract class AbstractModel implements \ArrayAccess, \Iterator {
 		}
 	}
 
+	public function remove_available_key($key)
+	{
+		$array_keys = array_keys($this->available_keys, $key, TRUE);
+		foreach ($array_keys as $array_key)
+		{
+			unset($this->available_keys[$array_key]);
+		}
+
+		return $this;
+	}
 	public function get_available_keys()
 	{
 		return $this->available_keys;

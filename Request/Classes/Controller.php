@@ -12,6 +12,8 @@ namespace Request\Classes;
 class Controller {
 
 	protected $request = NULL;
+
+	protected $layout = NULL;
 	public final function __construct($request)
 	{
 		$this->request = $request;
@@ -22,16 +24,36 @@ class Controller {
 		return $this->request;
 	}
 
+	public function init()
+	{
+
+	}
+
+	public function before_action()
+	{
+
+	}
+
+	public function after_action()
+	{
+
+	}
+
+	public function get_layout()
+	{
+		return $this->layout;
+	}
+
 	public function get_view()
 	{
 		$request =  $this->get_request();
 
-		if (isset($request['view']))
+		if ($request->param_exists('view'))
 		{
-			$view_name = $request['view'];
-			$view_class_name = '\\'.$request->get_module().'\\View\\'.$view_name;
+			$view_name = $request->get_param('view');
+			$view_class_name = '\\'.$request->get_param('module').'\\View\\'.$view_name;
 		} else {
-			$view_class_name =  '\\'.$request->get_module().'\\View\\'.$request->get_controller().'\\'.$request->get_action();
+			$view_class_name =  '\\'.$request->get_param('module').'\\View\\'.$request->get_param('controller').'\\'.$request->get_param('action');
 		}
 
 		$view_class_reflector = new \ReflectionClass($view_class_name);

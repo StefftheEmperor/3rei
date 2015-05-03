@@ -9,7 +9,7 @@ namespace Model\Classes;
 class Registry extends \Model\Classes\AbstractModel {
 	private static $instance = NULL;
 
-	public static function getinstance()
+	public static function get_instance()
 	{
 		if (static::$instance === NULL)
 		{
@@ -21,11 +21,11 @@ class Registry extends \Model\Classes\AbstractModel {
 
     public static function get($key)
     {
-        return static::getinstance()->offsetGet($key);
+        return static::get_instance()->offsetGet($key);
     }
 
 	public static function set($key, $value)
 	{
-		return static::getinstance()->offsetSet($key, $value);
+		return static::get_instance()->offsetSet($key, $value);
 	}
 } 

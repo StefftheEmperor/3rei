@@ -14,6 +14,7 @@ class Statement implements \Iterator, \Countable {
 
 	protected $current = null;
 	protected $key = null;
+
     protected $attributes = array();
 
 	protected $connection;
@@ -46,6 +47,7 @@ class Statement implements \Iterator, \Countable {
 	}
 	public function next()
 	{
+
 		$current_row = $this->pdo_statement->fetch(\PDO::FETCH_ASSOC);
 
 		if ($current_row === FALSE) {
@@ -72,6 +74,7 @@ class Statement implements \Iterator, \Countable {
 		$this->current = $current;
 
 		($this->key === NULL ? ($this->key = 0) : ($this->key++));
+
 	}
 
 	public function valid()

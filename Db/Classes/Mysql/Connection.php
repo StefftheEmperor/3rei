@@ -131,7 +131,6 @@ class Connection {
 			}
 		}
 
-
 		return $columns;
 	}
 

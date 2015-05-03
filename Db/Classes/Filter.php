@@ -11,16 +11,21 @@ namespace Db\Classes;
 
 class Filter {
 
-    protected $operand1;
-    protected $operator;
-    protected $operand2;
-    public function __construct($operand1, $operator, $operand2)
-    {
-        $this->operand1 = $operand1;
-        $this->operator = $operator;
-        $this->operand2 = $operand2;
-    }
+	protected $operand1;
+	protected $operator;
+	protected $operand2;
+	
+	public function __construct($operand1, $operator, $operand2)
+	{
+		$this->operand1 = $operand1;
+		$this->operator = $operator;
+		$this->operand2 = $operand2;
+	}
 
+	public static function factory($operand1, $operator, $operand2)
+	{
+		return new static($operand1, $operator, $operand2);
+	}
 	public function get_operand1()
 	{
 		return $this->operand1;

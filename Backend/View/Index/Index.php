@@ -11,4 +11,10 @@ namespace Backend\View\Index;
 
 class Index extends \Request\Classes\View {
 
+	public function get_html()
+	{
+		return <<<'HTML'
+
+HTML;
+	}
 }

@@ -9,6 +9,10 @@
 namespace Error\Controller;
 
 
-class Error {
+class Error extends \Request\Classes\Controller {
 
+	public function action_error_404()
+	{
+
+	}
 }

@@ -13,10 +13,13 @@ class Url {
 	private $url = '';
 	private $params = array();
 
+	/**
+	 * @var \Request\Model\Rewrite|NULL $rewrite
+	 */
 	private $rewrite = NULL;
+
 	public static function get_instance($url = null)
 	{
-
 		return new static($url);
 	}
 	public function __construct($url = null)
@@ -42,37 +45,57 @@ class Url {
 			parse_str($url_components['query'], $this->params);
 		}
 
-		$this->rewrite = \Request\Model\Rewrite::factory_by_url($this);
-
-		$this->rewrite->save();
+		if ( ! isset($this->rewrite))
+		{
+			$this->set_rewrite(\Request\Model\Rewrite::factory_by_url($this));
+		}
 	}
 
+	/**
+	 * @param $params
+	 * @return $this
+	 */
 	public function set_params($params)
 	{
 		$this->params = $params;
+
+		return $this;
 	}
 
+	/**
+	 * @return \Request\Model\Rewrite
+	 */
 	public function get_rewrite()
 	{
 		if ( ! isset($this->rewrite))
 		{
-
-			$this->rewrite = new \Model\Rewrite;
-
+			$this->rewrite = new \Request\Model\Rewrite;
 			$this->rewrite->set_url($this);
-
 		}
 
 		return $this->rewrite;
 	}
+
+	/**
+	 * @param \Request\Model\Rewrite $rewrite
+	 * @return $this
+	 */
+	public function set_rewrite(\Request\Model\Rewrite $rewrite)
+	{
+		$this->rewrite = $rewrite;
+
+		return $this;
+	}
+
 	public function redirect()
 	{
-		$registry = Registry::getinstance();
+		$registry = Registry::get_instance();
 		if (isset($registry['session'])) {
 			$registry['session']->save();
 		}
 		header('Location: '.$this->get_absolute_url());
 	}
+
 	public function get_absolute_url()
 	{
 		return $this->scheme . '://'.$this->domain.($this->url ? '/' . $this->url : '').(count($this->params) ? '?'.http_build_query($this->params) : '');

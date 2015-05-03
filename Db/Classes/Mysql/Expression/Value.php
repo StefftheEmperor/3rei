@@ -18,7 +18,7 @@ class Value extends \Db\Classes\Expression\AbstractExpression {
 			return 'NULL';
 		} elseif (is_numeric($this->get_unfiltered()))
 		{
-			return $this->value;
+			return $this->get_unfiltered();
 		}
 		else {
 			return '"'.$this->get_unfiltered().'"';

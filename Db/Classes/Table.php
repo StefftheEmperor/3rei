@@ -14,13 +14,15 @@ class Table {
 
 	protected $columns = null;
 
-    protected $filter = NULL;
+	protected $filter = NULL;
 
 	protected $result;
 
 	protected $database;
 
 	protected $primary_key;
+
+	protected $foreign_keys_map = array();
 	/**
 	 * @param $table_name
 	 */
@@ -28,9 +30,14 @@ class Table {
 	{
 		$this->table_name = $table_name;
 
+		$this->init_foreign_keys_map();
 		$this->get_columns();
 	}
 
+	public function init_foreign_keys_map()
+	{
+
+	}
 
 	public function get_primary_key()
 	{
@@ -44,35 +51,69 @@ class Table {
 		return $this;
 	}
 
+	public function get_foreign_keys_map()
+	{
+		return $this->foreign_keys_map;
+	}
+
+	public function get_foreign_key($key)
+	{
+		if (array_key_exists($key, $this->get_foreign_keys_map()))
+		{
+			return $this->foreign_keys_map[$key];
+		}
+		else
+		{
+			return NULL;
+		}
+	}
+
+	public function get_foreign_model($key)
+	{
+		if (array_key_exists($key, $this->get_foreign_keys_map()))
+		{
+			return $this->foreign_keys_map[$key]->get_foreign_model();
+		}
+		else
+		{
+			return NULL;
+		}
+	}
+
+	public function add_foreign_key(\Db\Classes\ForeignKey $foreignKey)
+	{
+		$this->foreign_keys_map[$foreignKey->get_key()] = $foreignKey;
+	}
+
 	/**
 	 * @param $table_name
 	 * @return $this
 	 */
-    public static function factory($table_name)
-    {
-        $instance = new static($table_name);
+	public static function factory($table_name)
+	{
+		$instance = new static($table_name);
 
-        return $instance;
-    }
+		return $instance;
+	}
 
 	/**
 	 * @param $filter
 	 * @return $this
 	 */
-    public function filter($filter)
-    {
-        $this->filter = $filter;
+	public function filter($filter)
+	{
+		$this->filter = $filter;
 
-        return $this;
-    }
+		return $this;
+	}
 
 	/**
 	 * @return \Db\Mysql\Result
 	 */
-    public function get_one()
-    {
-        return $this->get_database()->select()->from($this->table_name)->filter($this->filter)->execute()->current();
-    }
+	public function get_one()
+	{
+		return $this->get_database()->select()->from($this->table_name)->filter($this->filter)->execute()->current();
+	}
 
 	public function get_all()
 	{
@@ -105,13 +146,9 @@ class Table {
 	{
 		if ($this->columns === NULL)
 		{
-
 			$db = $this->get_database();
-
 			$this->columns = $db->describe_table($this)->map_to('\Db\Classes\Column');
-
 		}
-
 
 		return $this->columns;
 	}
@@ -122,10 +159,10 @@ class Table {
 		$this->columns[$column->get_field()] = $column;
 	}
 
-    public function get_table_name()
-    {
-        return $this->table_name;
-    }
+	public function get_table_name()
+	{
+		return $this->table_name;
+	}
 
 	public final function before_sleep()
 	{

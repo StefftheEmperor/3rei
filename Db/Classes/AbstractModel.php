@@ -8,15 +8,17 @@
 
 namespace Db\Classes;
 
-class AbstractModel extends \Model\Classes\AbstractModel {
+abstract class AbstractModel extends \Model\Classes\AbstractModel {
 
 	private $table = NULL;
 	protected $table_name = NULL;
+	protected $table_model = NULL;
 	protected $primary_key = NULL;
 
 	protected $is_new = TRUE;
 	final public function __construct()
 	{
+
 		$this->init_table();
 		if (($this->get_table() === NULL) OR ($this->get_table()->get_primary_key() === NULL))
 		{
@@ -30,11 +32,23 @@ class AbstractModel extends \Model\Classes\AbstractModel {
 
 	}
 
+	protected function get_table_model()
+	{
+		return $this->table_model;
+	}
+
+	protected function init_table_model()
+	{
+		$this->table_model = '\Db\Classes\Table';
+	}
+
 	protected function init_table()
 	{
+		$this->init_table_model();
 		if (isset($this->table_name))
 		{
-			$this->table = new Table($this->table_name);
+			$table_model_reflection = new \ReflectionClass($this->get_table_model());
+			$this->table = $table_model_reflection->newInstance($this->table_name);
 			if (isset($this->primary_key))
 			{
 				$this->table->set_primary_key($this->primary_key);
@@ -53,6 +67,9 @@ class AbstractModel extends \Model\Classes\AbstractModel {
 		return $this;
 	}
 
+	/**
+	 * @return \Db\Classes\Table
+	 */
 	public function get_table()
 	{
 		return $this->table;
@@ -97,18 +114,34 @@ class AbstractModel extends \Model\Classes\AbstractModel {
 
 	public function save()
 	{
-		$filter = new Filter($this->get_table()->get_primary_key(), '=', $this->__get($this->get_table()->get_primary_key()));
 		if ($this->is_new()) {
 			$query = new \Db\Classes\Mysql\Query(\Model\Classes\Registry::get('database'), \Db\Classes\Mysql\Query::QUERY_INSERT, $this);
 		} else {
+			$filter = new Filter($this->get_table()->get_primary_key(), '=', $this->__get($this->get_table()->get_primary_key()));
 			$query = new \Db\Classes\Mysql\Query(\Model\Classes\Registry::get('database'), \Db\Classes\Mysql\Query::QUERY_UPDATE, $this);
+			$query->set_filter($filter);
 		}
 
-		$query->set_table($this->get_table())->set_filter($filter);
+		$query->set_table($this->get_table());
 
-		$query->execute();
+		$result = $query->execute();
+
+		return $result;
 	}
 
+	public function offsetGet($key)
+	{
+
+		if (array_key_exists($key, $this->get_table()->get_foreign_keys_map()))
+		{
+			$foreign_key = $this->get_table()->get_foreign_key($key);
+			return call_user_func(array($foreign_key->get_foreign_model(), 'factory_by_'.$foreign_key->get_foreign_key()), parent::offsetGet($foreign_key->get_key()));
+		}
+		else
+		{
+			return parent::offsetGet($key);
+		}
+	}
 
 	public final function before_sleep()
 	{

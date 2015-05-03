@@ -27,6 +27,25 @@ class Result extends \Model\Classes\AbstractModel {
 		return $this->get_statement()->get_query();
 	}
 
+	public function rewind()
+	{
+
+		parent::rewind();
+	}
+
+
+	public function next()
+	{
+
+		parent::next();
+	}
+
+	public function key()
+	{
+
+		return parent::key();
+	}
+
 	public function map_to($classname)
 	{
 		$reflection_class = new \ReflectionClass($classname);
@@ -57,6 +76,14 @@ class Result extends \Model\Classes\AbstractModel {
 			}
 		}
 
+		if ($instance instanceof \Db\Classes\AbstractModel)
+		{
+			foreach ($instance->get_table()->get_columns() as $column)
+			{
+				$instance->{'set_'.strtolower($column->get_field())}(NULL);
+
+			}
+		}
 		foreach ($this as $key => $value)
 		{
 			$instance->{'set_'.strtolower($key)}($value);

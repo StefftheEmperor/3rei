@@ -11,4 +11,12 @@ namespace Error\View\Error;
 
 class Error_404 {
 
+	public function get_html()
+	{
+		return <<<'HTML'
+<h1>Seite nicht gefunden</h1>
+
+HTML;
+
+	}
 }

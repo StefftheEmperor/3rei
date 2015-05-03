@@ -9,7 +9,7 @@
 namespace Renderer\Classes;
 
 
-class Html {
+class Html extends \Renderer\Classes\AbstractRenderer {
 
 	public function render($view)
 	{
