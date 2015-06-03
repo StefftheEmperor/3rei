@@ -9,7 +9,7 @@
 namespace Db\Interfaces;
 
 
-interface Model {
+interface Model extends \Db\Interfaces\AbstractModel {
 	public function get_primary_key();
 	public function get_table_name();
 }

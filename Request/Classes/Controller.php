@@ -11,10 +11,18 @@ namespace Request\Classes;
 
 class Controller {
 
+	/**
+	 * @var \Request\Classes\Request $request
+	 */
 	protected $request = NULL;
 
 	protected $layout = NULL;
-	public final function __construct($request)
+
+	protected $view = NULL;
+	/**
+	 * @param Request $request
+	 */
+	public final function __construct(\Request\Classes\Request $request)
 	{
 		$this->request = $request;
 	}
@@ -44,20 +52,52 @@ class Controller {
 		return $this->layout;
 	}
 
+	public function set_layout($layout)
+	{
+		$this->layout = $layout;
+
+		return $this;
+	}
+
+	public function get_registry()
+	{
+		return \Model\Classes\Registry::get_instance();
+	}
+
+	public function get_database_connection()
+	{
+		return $this->get_request()->get_model()->get_connection();
+	}
+
 	public function get_view()
 	{
-		$request =  $this->get_request();
+		if ( ! isset($this->view)) {
 
-		if ($request->param_exists('view'))
-		{
-			$view_name = $request->get_param('view');
-			$view_class_name = '\\'.$request->get_param('module').'\\View\\'.$view_name;
-		} else {
-			$view_class_name =  '\\'.$request->get_param('module').'\\View\\'.$request->get_param('controller').'\\'.$request->get_param('action');
+			$request = $this->get_request();
+
+			if ($request->param_exists('view')) {
+				$view_name = $request->get_param('view');
+				$view_class_name = '\\' . $request->get_param('module') . '\\View\\' . $request->get_param('controller') . '\\' . $view_name;
+			} else {
+				$view_class_name = '\\' . $request->get_param('module') . '\\View\\' . $request->get_param('controller') . '\\' . $request->get_param('action');
+			}
+
+			if ( ! class_exists($view_class_name))
+			{
+				throw new \Request\Classes\View\Exception('View not found: '.$view_class_name);
+			}
+			$view_class_reflector = new \ReflectionClass($view_class_name);
+
+			$this->view = $view_class_reflector->newInstance();
 		}
 
-		$view_class_reflector = new \ReflectionClass($view_class_name);
+		return $this->view;
+	}
 
-		return $view_class_reflector->newInstance();
+	public function set_view($view)
+	{
+		$this->get_request()->set_param('view', $view);
+
+		return $this;
 	}
 }

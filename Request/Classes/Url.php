@@ -6,11 +6,14 @@
  * Time: 17:25
  */
 namespace Request\Classes;
-class Url {
+class Url
+{
+	const SCHEME_HTTP = 'http';
+	const SCHEME_HTTPS = 'https';
 
 	private $scheme = 'http';
 	private $domain = null;
-	private $url = '';
+	private $url = null;
 	private $params = array();
 
 	/**
@@ -22,6 +25,7 @@ class Url {
 	{
 		return new static($url);
 	}
+
 	public function __construct($url = null)
 	{
 
@@ -31,10 +35,14 @@ class Url {
 		$url_components = parse_url($url);
 		if (isset($url_components['scheme'])) {
 			$this->scheme = $url_components['scheme'];
+		} else {
+			$this->scheme = static::SCHEME_HTTP;
 		}
 
 		if (isset($url_components['host'])) {
 			$this->domain = $url_components['host'];
+		} else {
+			$this->domain = $_SERVER['SERVER_NAME'];
 		}
 
 		if (isset($url_components['path'])) {
@@ -45,10 +53,6 @@ class Url {
 			parse_str($url_components['query'], $this->params);
 		}
 
-		if ( ! isset($this->rewrite))
-		{
-			$this->set_rewrite(\Request\Model\Rewrite::factory_by_url($this));
-		}
 	}
 
 	/**
@@ -58,31 +62,6 @@ class Url {
 	public function set_params($params)
 	{
 		$this->params = $params;
-
-		return $this;
-	}
-
-	/**
-	 * @return \Request\Model\Rewrite
-	 */
-	public function get_rewrite()
-	{
-		if ( ! isset($this->rewrite))
-		{
-			$this->rewrite = new \Request\Model\Rewrite;
-			$this->rewrite->set_url($this);
-		}
-
-		return $this->rewrite;
-	}
-
-	/**
-	 * @param \Request\Model\Rewrite $rewrite
-	 * @return $this
-	 */
-	public function set_rewrite(\Request\Model\Rewrite $rewrite)
-	{
-		$this->rewrite = $rewrite;
 
 		return $this;
 	}
@@ -98,7 +77,21 @@ class Url {
 
 	public function get_absolute_url()
 	{
-		return $this->scheme . '://'.$this->domain.($this->url ? '/' . $this->url : '').(count($this->params) ? '?'.http_build_query($this->params) : '');
+		return $this->scheme . '://'.$this->domain.($this->get_url()).(count($this->params) ? '?'.http_build_query($this->params) : '');
 	}
 
+	public function get_domain()
+	{
+		return $this->domain;
+	}
+
+	public function get_host()
+	{
+		return $this->get_domain();
+	}
+
+	public function get_url()
+	{
+		return '/'.$this->url;
+	}
 } 

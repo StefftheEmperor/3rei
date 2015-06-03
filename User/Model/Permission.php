@@ -13,8 +13,8 @@ class Permission extends \AbstractModel {
 
 	public static function factory_by_user_id($user_id)
 	{
-		$filter = new \Db\Filter('user_id', '=', $user_id);
-		$result = \Db\Table::factory('permission')->filter($filter)->get_all();
+		$filter = new \Db\Classes\Filter('user_id', '=', $user_id);
+		$result = \Db\Classes\Table::factory('permission')->filter($filter)->get_all();
 
 		return $result->map_to(get_called_class());
 	}

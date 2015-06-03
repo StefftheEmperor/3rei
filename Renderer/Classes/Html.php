@@ -13,6 +13,18 @@ class Html extends \Renderer\Classes\AbstractRenderer {
 
 	public function render($view)
 	{
-		return $view->get_html();
+		if (is_string($view))
+		{
+			return $view;
+		}
+		else
+		{
+			$view->set_renderer($this);
+			if (method_exists($view, 'get_html')) {
+				return $view->get_html();
+			} else {
+				throw new \Renderer\Classes\Exception('View '.get_class($view).' does not support '.get_called_class().' as renderer');
+			}
+		}
 	}
 }

@@ -8,17 +8,20 @@
 
 namespace Db\Classes;
 
-abstract class AbstractModel extends \Model\Classes\AbstractModel {
+abstract class AbstractModel extends \Model\Classes\AbstractModel implements \Db\Interfaces\Model
+{
 
 	private $table = NULL;
 	protected $table_name = NULL;
 	protected $table_model = NULL;
 	protected $primary_key = NULL;
-
+	protected $connection = NULL;
 	protected $is_new = TRUE;
-	final public function __construct()
-	{
 
+
+	final public function __construct(\Db\Classes\Mysql\Connection $connection)
+	{
+		$this->connection = $connection;
 		$this->init_table();
 		if (($this->get_table() === NULL) OR ($this->get_table()->get_primary_key() === NULL))
 		{
@@ -32,6 +35,11 @@ abstract class AbstractModel extends \Model\Classes\AbstractModel {
 
 	}
 
+	public function get_connection()
+	{
+		return $this->connection;
+	}
+
 	protected function get_table_model()
 	{
 		return $this->table_model;
@@ -42,13 +50,17 @@ abstract class AbstractModel extends \Model\Classes\AbstractModel {
 		$this->table_model = '\Db\Classes\Table';
 	}
 
+	public function get_table_name()
+	{
+		return $this->get_table()->get_table_name();
+	}
 	protected function init_table()
 	{
 		$this->init_table_model();
 		if (isset($this->table_name))
 		{
 			$table_model_reflection = new \ReflectionClass($this->get_table_model());
-			$this->table = $table_model_reflection->newInstance($this->table_name);
+			$this->table = $table_model_reflection->newInstance($this->connection, $this->table_name);
 			if (isset($this->primary_key))
 			{
 				$this->table->set_primary_key($this->primary_key);

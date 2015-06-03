@@ -38,7 +38,7 @@ class Query extends \Db\Classes\AbstractQuery {
 
 	public function from($table) {
 		if (is_string($table)) {
-			$table = new \Db\Classes\Table($table);
+			$table = new \Db\Classes\Table($this->get_connection(), $table);
 		}
 
 		$this->from = $table;

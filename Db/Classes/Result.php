@@ -50,11 +50,16 @@ class Result extends \Model\Classes\AbstractModel {
 	{
 		$reflection_class = new \ReflectionClass($classname);
 
-		$instance = $reflection_class->newInstance();
+		if ($reflection_class->implementsInterface('\Db\Interfaces\AbstractModel'))
+		{
+			$instance = $reflection_class->newInstance($this->get_statement()->get_connection());
+		} else {
+			$instance = $reflection_class->newInstance();
+		}
 
 		if ($this->get_query()->is_insert())
 		{
-			$instance->set_primary_id($this->get_statement()->get_conenction()->lastInsertId());
+			$instance->set_primary_id($this->get_statement()->get_connection()->lastInsertId());
 		}
 
 		foreach ($this->get_query()->get_filter() as $filter)

@@ -9,7 +9,7 @@
 namespace Db;
 
 
-class Exception extends \Debug\CustomException {
+class Exception extends \Debug\Classes\CustomException {
 
 	protected $history = array();
 

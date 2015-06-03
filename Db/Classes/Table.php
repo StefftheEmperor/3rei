@@ -23,11 +23,13 @@ class Table {
 	protected $primary_key;
 
 	protected $foreign_keys_map = array();
+
 	/**
 	 * @param $table_name
 	 */
-	public function __construct($table_name)
+	public function __construct(\Db\Classes\Mysql\Connection $connection, $table_name)
 	{
+		$this->database = $connection;
 		$this->table_name = $table_name;
 
 		$this->init_foreign_keys_map();
@@ -89,9 +91,9 @@ class Table {
 	 * @param $table_name
 	 * @return $this
 	 */
-	public static function factory($table_name)
+	public static function factory(\Db\Classes\Mysql\Connection $connection, $table_name)
 	{
-		$instance = new static($table_name);
+		$instance = new static($connection, $table_name);
 
 		return $instance;
 	}
@@ -112,12 +114,23 @@ class Table {
 	 */
 	public function get_one()
 	{
-		return $this->get_database()->select()->from($this->table_name)->filter($this->filter)->execute()->current();
+		$query = $this->get_database()->select()->from($this->table_name);
+
+		if (isset($this->filter))
+		{
+			$query->filter($this->filter);
+		}
+		return $query->execute()->current();
 	}
 
 	public function get_all()
 	{
-		return $this->get_database()->select()->from($this->table_name)->filter($this->filter)->execute();
+		$query = $this->get_database()->select()->from($this->table_name);
+		if (isset($this->filter))
+		{
+			$query->filter($this->filter);
+		}
+		return $query->execute();
 	}
 
 	/**
@@ -125,11 +138,6 @@ class Table {
 	 */
 	public function get_database()
 	{
-		if ( ! isset($this->database))
-		{
-			$this->database = \Model\Classes\Registry::get('database');
-		}
-
 		return $this->database;
 	}
 

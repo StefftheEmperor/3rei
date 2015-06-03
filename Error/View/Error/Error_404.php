@@ -9,7 +9,7 @@
 namespace Error\View\Error;
 
 
-class Error_404 {
+class Error_404 extends \Request\Classes\View {
 
 	public function get_html()
 	{

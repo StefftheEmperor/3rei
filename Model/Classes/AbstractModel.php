@@ -79,10 +79,6 @@ abstract class AbstractModel implements \ArrayAccess, \Iterator {
 		return $key !== FALSE;
 	}
 
-	public function get_table()
-	{
-		return new \Db\Table($this->__get('table'));
-	}
 	public function offsetSet($offset, $value)
 	{
 		if (is_string($offset) && intval($offset) == $offset AND ((intval($offset) > 0) OR ($offset === '0')))

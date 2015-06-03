@@ -24,6 +24,7 @@ class Index extends \Template\Classes\Layout {
 	<body class="backend">
 		<div class="content_wrapper">
 			<div class="menu">
+			'.$this->get_menu().'
 			</div>
 			<div class="content">
 				'.$this->get_content().'

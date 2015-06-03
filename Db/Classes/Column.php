@@ -9,10 +9,15 @@
 namespace Db\Classes;
 
 
-class Column extends \Model\Classes\AbstractModel
+class Column extends \Model\Classes\AbstractModel implements \Db\Interfaces\AbstractModel
 {
 	protected $is_primary;
+	protected $connection = NULL;
 
+	public function __construct($connection)
+	{
+		$this->connection = $connection;
+	}
 	public function set_key($key)
 	{
 		if ($key === 'PRI')

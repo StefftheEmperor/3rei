@@ -8,7 +8,7 @@
 
 namespace Db\Classes\Mysql;
 
-class Connection {
+class Connection extends \Db\Classes\AbstractConnection implements \Db\Interfaces\Connection {
 
 	protected $dbh = NULL;
 
@@ -164,4 +164,11 @@ class Connection {
 
 		return $sleeping_parts;
 	}
+
+	public function get_last_query()
+	{
+		$history = $this->get_history();
+		return end($history);
+	}
+
 } 
