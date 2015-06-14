@@ -9,6 +9,8 @@
 namespace Structure\Classes;
 
 
+use Debug\Classes\CustomException;
+
 class AbstractStructure  implements \Request\Interfaces\Renderable
 {
 
@@ -19,7 +21,14 @@ class AbstractStructure  implements \Request\Interfaces\Renderable
 	{
 		$this->attributes = new \Structure\Classes\Attributes;
 
+		$reflection = new \ReflectionClass($this);
+
 		if (method_exists($this, 'init')) {
+			$init_reflection = $reflection->getMethod('init');
+			if (func_num_args() < $init_reflection->getNumberOfRequiredParameters())
+			{
+				throw new CustomException('Cannot init '.get_called_class().' - needs '.$init_reflection->getNumberOfRequiredParameters().' params but only got '.func_num_args());
+			}
 			call_user_func_array(array($this, 'init'), func_get_args());
 		}
 	}
@@ -35,6 +44,9 @@ class AbstractStructure  implements \Request\Interfaces\Renderable
 		return $this;
 	}
 
+	/**
+	 * @return static
+	 */
 	public static function factory()
 	{
 		$reflection_class = new \ReflectionClass(get_called_class());

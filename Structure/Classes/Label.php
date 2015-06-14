@@ -14,6 +14,6 @@ class Label extends \Structure\Classes\AbstractValueStructure
 
 	public function get_html()
 	{
-		return '<label'.$this->get_attributes_html().'>'.$this->get_value().'</label>';
+		return '<label'.$this->get_attributes_html().'>'.$this->get_name().'</label>';
 	}
 }

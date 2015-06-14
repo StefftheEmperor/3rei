@@ -15,7 +15,7 @@ class Link extends \Structure\Classes\AbstractValueStructure {
 
 	public function get_html()
 	{
-
-		return '<a'.$this->get_attributes_html().'>'.$this->get_renderer()->render($this->get_value()).'</a>';
+		$value = $this->get_value();
+		return '<a'.$this->get_attributes_html().'>'.(isset($value) ? $this->get_renderer()->render($value) : '').'</a>';
 	}
 }

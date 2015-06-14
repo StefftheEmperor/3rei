@@ -9,6 +9,8 @@
 namespace Request\Model;
 
 
+use Request\Model\Request\Param\Table;
+
 class Request extends \Db\Classes\AbstractModel implements \Db\Interfaces\Model {
 	protected $primary_key = 'id';
 	protected $table_name = 'request';
@@ -29,8 +31,8 @@ class Request extends \Db\Classes\AbstractModel implements \Db\Interfaces\Model 
 	public static function factory_by_id(\Db\Interfaces\Connection $connection, $id)
 	{
 		$request = new static($connection);
-		$filter = \Db\Classes\Filter::factory(\Db\Classes\Expression\Row::factory($request->get_primary_key()), '=', \Db\Classes\Expression\Value::factory($id));
-		$result = \Request\Model\Rewrite\Table::factory($connection, $request->get_table_name())->filter($filter)->get_one();
+		$filter = \Db\Classes\Filter\Comparison::factory(\Db\Classes\Expression\Row::factory($request->get_primary_key()), \Db\Classes\Expression\Value::factory($id));
+		$result = \Request\Model\Rewrite\Table::factory($connection, $request->get_table_name())->filter($filter)->get_one(\Db\Classes\Table\Select\All::factory());
 
 		return $result->map_to($request);
 	}
@@ -81,7 +83,8 @@ class Request extends \Db\Classes\AbstractModel implements \Db\Interfaces\Model 
 		$params = $this->get_params();
 		foreach ($params as $param_key => $param)
 		{
-			if ($param->get_key() == $key)
+			$param_key = $param->get_key();
+			if ($param_key === $key)
 			{
 				if (isset($value))
 				{
@@ -121,10 +124,10 @@ class Request extends \Db\Classes\AbstractModel implements \Db\Interfaces\Model 
 	{
 		$params = array();
 		if ($this->offsetExists('id')) {
-			$result_set = \Db\Classes\Table::factory($this->get_connection(), 'request__request2params')->filter(\Db\Classes\Filter::factory(\Db\Classes\Mysql\Expression\Row::factory('request_id'), '=', \Db\Classes\Mysql\Expression\Value::factory($this->get_id())))->get_all();
+			$result_set = \Db\Classes\Table::factory($this->get_connection(), 'request__request2params')->filter(\Db\Classes\Filter\Comparison::factory(\Db\Classes\Mysql\Expression\Row::factory('request_id'), \Db\Classes\Mysql\Expression\Value::factory($this->get_id())))->get_all(\Db\Classes\Table\Select\All::factory());
 			foreach ($result_set as $result_row)
 			{
-				$params[] = \Request\Model\Param\Table::factory($this->get_connection(), 'request__param')->filter(\Db\Classes\Filter::factory(\Db\Classes\Mysql\Expression\Row::factory('id'), '=', \Db\Classes\Mysql\Expression\Value::factory($result_row['param_id'])))->get_one()->map_to('\Request\Model\Request\Param');
+				$params[] = Table::factory($this->get_connection(), 'request__param')->filter(\Db\Classes\Filter\Comparison::factory(\Db\Classes\Mysql\Expression\Row::factory('id'), \Db\Classes\Mysql\Expression\Value::factory($result_row['param_id'])))->get_one(\Db\Classes\Table\Select\All::factory())->map_to('\Request\Model\Request\Param');
 			}
 		}
 
@@ -155,7 +158,11 @@ class Request extends \Db\Classes\AbstractModel implements \Db\Interfaces\Model 
 		{
 			return NULL;
 		}
+	}
 
+	public function get_attributes()
+	{
+		return $this->attributes;
 	}
 
 	public function save()
@@ -165,6 +172,6 @@ class Request extends \Db\Classes\AbstractModel implements \Db\Interfaces\Model 
 			$param->save();
 		}
 
-		parent::save();
+		return parent::save();
 	}
 }

@@ -21,10 +21,17 @@ class Params extends \Backend\Classes\AbstractController
 		$form->set_method(\Structure\Classes\Form::METHOD_POST);
 		$form->set_action($this->get_request()->get_url());
 
+		$form->validate($this->get_request()->get_post_data());
+
 		$list = \Structure\Classes\StructureList::factory();
 		foreach ($request->get_params() as $param)
 		{
 			$list->add(\Structure\Classes\KeyValuePair::factory(\Structure\Classes\Form\Input::factory('key['.$param->get_id().']', $param->get_key()), \Structure\Classes\Form\Input::factory('value['.$param->get_id().']',$param->get_value())));
+		}
+
+		if ($form->is_submitted($this->get_request()->get_post_data()))
+		{
+			$param = \Request\Model\Request\Param::factory_by_key_value();
 		}
 		$list->add(\Structure\Classes\KeyValuePair::factory(\Structure\Classes\Form\Input::factory('key[]'), \Structure\Classes\Form\Input::factory('value[]')));
 

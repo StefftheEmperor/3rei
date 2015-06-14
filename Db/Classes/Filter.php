@@ -9,35 +9,53 @@
 namespace Db\Classes;
 
 
-class Filter {
+use Debug\Classes\CustomException;
 
-	protected $operand1;
-	protected $operator;
-	protected $operand2;
-	
-	public function __construct($operand1, $operator, $operand2)
+abstract class Filter {
+
+	protected $operands = NULL;
+
+	public function __construct($operand1, $operand2, $_ = NULL)
 	{
-		$this->operand1 = $operand1;
-		$this->operator = $operator;
-		$this->operand2 = $operand2;
+		$arguments = func_get_args();
+
+
+		while (($operand = array_shift($arguments)) !== NULL)
+		{
+			if ( ! isset($this->operands))
+			{
+				$this->operands = array();
+			}
+
+			if ($operand instanceof \Db\Classes\Table\Column)
+			{
+				$operand = \Db\Classes\Expression\Row::factory($operand);
+			}
+			$this->operands[] = $operand;
+		}
 	}
 
-	public static function factory($operand1, $operator, $operand2)
+	public static function factory($operand1 = NULL, $operand2 = NULL, $_ = NULL)
 	{
-		return new static($operand1, $operator, $operand2);
-	}
-	public function get_operand1()
-	{
-		return $this->operand1;
+		$arguments = func_get_args();
+		$reflection = new \ReflectionClass(get_called_class());
+		return $reflection->newInstanceArgs($arguments);
 	}
 
-	public function get_operand2()
+	public function get_operand($num)
 	{
-		return $this->operand2;
+		if (array_key_exists($num, $this->operands))
+		{
+			return $this->operands[$num];
+		}
+		else
+		{
+			return NULL;
+		}
 	}
 
-	public function get_operator()
+	public function get_operands()
 	{
-		return $this->operator;
+		return $this->operands;
 	}
 } 

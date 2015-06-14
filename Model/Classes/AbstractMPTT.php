@@ -9,7 +9,13 @@
 namespace Model\Classes;
 
 
-class AbstractMPTT extends AbstractModel {
-	protected $lbr = 'lbd';
-	protected $rbr = 'rbd';
+abstract class AbstractMPTT extends AbstractModel
+{
+	protected $children = NULL;
+
+	protected $parent = NULL;
+
+	protected $depth = 0;
+
+
 }

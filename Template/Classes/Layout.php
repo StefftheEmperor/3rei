@@ -8,7 +8,7 @@
 
 namespace Template\Classes;
 
-class Layout extends \Request\Classes\View {
+class Layout extends \Request\Classes\Layout {
 
 	public function get_html()
 	{

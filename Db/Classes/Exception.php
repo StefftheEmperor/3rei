@@ -6,7 +6,7 @@
  * Time: 21:15
  */
 
-namespace Db;
+namespace Db\Classes;
 
 
 class Exception extends \Debug\Classes\CustomException {

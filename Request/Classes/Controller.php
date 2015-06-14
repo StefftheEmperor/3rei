@@ -32,6 +32,15 @@ class Controller {
 		return $this->request;
 	}
 
+	public function get_new_child_request()
+	{
+		$params_request_model = clone $this->get_request()->get_model();
+		$params_request = new \Request\Classes\Request;
+		$params_request->set_model($params_request_model);
+		$params_request->set_params($this->get_request()->get_params());
+		$params_request->set_param('layout', 'Plain');
+		return $params_request;
+	}
 	public function init()
 	{
 
@@ -89,6 +98,8 @@ class Controller {
 			$view_class_reflector = new \ReflectionClass($view_class_name);
 
 			$this->view = $view_class_reflector->newInstance();
+
+			$this->view->set_controller($this);
 		}
 
 		return $this->view;

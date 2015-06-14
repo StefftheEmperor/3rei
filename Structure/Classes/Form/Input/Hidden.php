@@ -9,13 +9,14 @@
 namespace Structure\Classes\Form\Input;
 
 
-class Hidden extends \Structure\Classes\Form\AbstractValue {
+class Hidden extends \Structure\Classes\Form\AbstractValue
+{
 
 	public function get_html()
 	{
 		$this->get_attributes()->type = 'hidden';
 		$this->get_attributes()->value = $this->get_value();
-
+		$this->get_attributes()->name = $this->get_key();
 		return '<input'.$this->get_attributes_html().' />';
 	}
 }

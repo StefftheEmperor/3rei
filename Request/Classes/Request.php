@@ -6,6 +6,8 @@
  * Time: 17:27
  */
 namespace Request\Classes;
+use Request\Model\Rewrite;
+
 class Request extends \Model\Classes\AbstractModel {
 
 	/**
@@ -45,10 +47,10 @@ class Request extends \Model\Classes\AbstractModel {
 	 * @param $id
 	 * @return static
 	 */
-	public static function factory_by_id($id)
+	public static function factory_by_id(\Db\Classes\AbstractConnection $connection, $id)
 	{
 		$request = new static;
-		$model = \Request\Model\Request::factory_by_id($id);
+		$model = \Request\Model\Request::factory_by_id($connection, $id);
 
 		$request->set_model($model);
 
@@ -83,6 +85,11 @@ class Request extends \Model\Classes\AbstractModel {
 	 */
 	public function get_url()
 	{
+		if ( ! isset($this->url))
+		{
+			$rewrite = Rewrite::factory_by_request($this->get_model()->get_connection(), $this->get_model());
+			$this->url = $rewrite->get_url();
+		}
 		return $this->url;
 	}
 
@@ -121,7 +128,8 @@ class Request extends \Model\Classes\AbstractModel {
 	 */
 	public function get_params()
 	{
-		if ( ! isset($this->params))
+		$model = $this->get_model();
+		if ( ! isset($this->params) AND ! isset($model))
 		{
 			$this->load_params();
 		}
@@ -177,14 +185,16 @@ class Request extends \Model\Classes\AbstractModel {
 		return $this;
 	}
 
-	public function set_params(Array $params)
+	public function set_params(Array $params = NULL)
 	{
-		foreach ($params as $param_key => $param_value)
-		{
-			$this->set_param($param_key, $param_value);
+		if (isset($params)) {
+			foreach ($params as $param_key => $param_value) {
+				$this->set_param($param_key, $param_value);
+			}
 		}
 		return $this;
 	}
+
 
 	public function get_attribute($offset)
 	{
@@ -202,6 +212,17 @@ class Request extends \Model\Classes\AbstractModel {
 		}
 	}
 
+	public function get_attributes()
+	{
+		$model = $this->get_model();
+		if (isset($model))
+		{
+			return $this->get_model()->get_attributes();
+		} else {
+			return $this->attributes;
+		}
+	}
+
 	public function set_attribute($offset, $value)
 	{
 		$model = $this->get_model();
@@ -212,6 +233,14 @@ class Request extends \Model\Classes\AbstractModel {
 		}
 
 		return $this;
+	}
+
+	public function set_attributes($attributes)
+	{
+		foreach ($attributes as $attribute_key => $attribute_value)
+		{
+			$this->set_attribute($attribute_key, $attribute_value);
+		}
 	}
 	/**
 	 * @param $offset
@@ -239,7 +268,6 @@ class Request extends \Model\Classes\AbstractModel {
 
 	public function set_post_data($post_data, $post_value = NULL)
 	{
-
 		if ((is_array($post_data) OR ($post_data instanceof \Request\Classes\Request\Post)) AND ! isset($post_value))
 		{
 			foreach ($post_data as $post_data_key => $post_data_value)
@@ -248,6 +276,17 @@ class Request extends \Model\Classes\AbstractModel {
 			}
 		} elseif (is_scalar($post_data) AND isset($post_value))
 		{
+			if (is_numeric($post_value))
+			{
+				$post_value = floatval($post_value);
+				if (intval($post_value) == $post_value)
+				{
+					$post_value = intval($post_value);
+				}
+			} elseif (is_string($post_value) AND $post_value === '')
+			{
+				$post_value = NULL;
+			}
 			$this->get_post_data()->__set($post_data , $post_value);
 		} else {
 			throw new \Request\Classes\Request\Exception('Can\'t handle request to set post_data');
@@ -325,6 +364,7 @@ class Request extends \Model\Classes\AbstractModel {
 			$layout = new \Request\Layout\Plain;
 		}
 
+		$layout->set_controller($controller_instance);
 		$layout->set_content($renderer->render($view));
 		return $renderer->render($layout);
 	}

@@ -8,85 +8,39 @@
 
 namespace Db\Classes;
 
-abstract class AbstractModel extends \Model\Classes\AbstractModel implements \Db\Interfaces\Model
+/**
+ * Class AbstractModel
+ * @package Db\Classes
+ */
+abstract class AbstractModel
+	extends \Model\Classes\AbstractModel
+	implements \Db\Interfaces\Model
 {
 
-	private $table = NULL;
-	protected $table_name = NULL;
-	protected $table_model = NULL;
+	use \Db\Traits\Model;
+
+	/**
+	 * @var null
+	 */
 	protected $primary_key = NULL;
-	protected $connection = NULL;
+
+	/**
+	 * @var bool
+	 */
 	protected $is_new = TRUE;
 
-
-	final public function __construct(\Db\Classes\Mysql\Connection $connection)
-	{
-		$this->connection = $connection;
-		$this->init_table();
-		if (($this->get_table() === NULL) OR ($this->get_table()->get_primary_key() === NULL))
-		{
-			throw new Exception('Primary id needs to be set in Class '.get_called_class());
-		}
-		$this->init();
-	}
-
+	/**
+	 *
+	 */
 	protected function init()
 	{
 
 	}
 
-	public function get_connection()
-	{
-		return $this->connection;
-	}
-
-	protected function get_table_model()
-	{
-		return $this->table_model;
-	}
-
-	protected function init_table_model()
-	{
-		$this->table_model = '\Db\Classes\Table';
-	}
-
-	public function get_table_name()
-	{
-		return $this->get_table()->get_table_name();
-	}
-	protected function init_table()
-	{
-		$this->init_table_model();
-		if (isset($this->table_name))
-		{
-			$table_model_reflection = new \ReflectionClass($this->get_table_model());
-			$this->table = $table_model_reflection->newInstance($this->connection, $this->table_name);
-			if (isset($this->primary_key))
-			{
-				$this->table->set_primary_key($this->primary_key);
-			}
-		}
-	}
-
-	public function set_table(\Db\Table $table)
-	{
-		foreach ($table->get_columns() as $column)
-		{
-			$this->add_available_key($column->get_field());
-		}
-
-		$this->table = $table;
-		return $this;
-	}
-
 	/**
-	 * @return \Db\Classes\Table
+	 * @param null $value
+	 * @return $this|bool
 	 */
-	public function get_table()
-	{
-		return $this->table;
-	}
-
 	public function is_new($value = NULL)
 	{
 		if (isset($value))
@@ -99,19 +53,29 @@ abstract class AbstractModel extends \Model\Classes\AbstractModel implements \Db
 		}
 	}
 
+	/**
+	 * @return mixed
+	 */
 	public function get_primary_key()
 	{
 		$primary_key = $this->get_table()->get_primary_key();
 
-		return $this->__get($primary_key);
+		return $primary_key;
 	}
 
+	/**
+	 * @return mixed
+	 */
 	public function get_primary_id()
 	{
-		return $this->{'get_'.strtolower($this->get_primary_key())}();
-
+		$primary_id = $this->{'get_'.strtolower($this->get_primary_key())}();
+		return $primary_id;
 	}
-	
+
+	/**
+	 * @param $value
+	 * @return \Model\Classes\AbstractModel
+	 */
 	public function set_primary_key($value)
 	{
 		$primary_key = $this->get_table()->get_primary_key();
@@ -119,28 +83,41 @@ abstract class AbstractModel extends \Model\Classes\AbstractModel implements \Db
 		return $this->__set($primary_key, $value);
 	}
 
+	/**
+	 * @param $value
+	 * @return mixed
+	 */
 	public function set_primary_id($value)
 	{
 		return $this->{'set_'.strtolower($this->get_primary_key())}($value);
 	}
 
+	/**
+	 * @return Mysql\Statement
+	 */
 	public function save()
 	{
 		if ($this->is_new()) {
-			$query = new \Db\Classes\Mysql\Query(\Model\Classes\Registry::get('database'), \Db\Classes\Mysql\Query::QUERY_INSERT, $this);
+			$query = new Mysql\Query($this->get_connection(), Mysql\Query::QUERY_INSERT, $this);
 		} else {
-			$filter = new Filter($this->get_table()->get_primary_key(), '=', $this->__get($this->get_table()->get_primary_key()));
-			$query = new \Db\Classes\Mysql\Query(\Model\Classes\Registry::get('database'), \Db\Classes\Mysql\Query::QUERY_UPDATE, $this);
+			$filter = Filter\Comparison::factory($this->get_table()->get_primary_key(), $this->__get($this->get_table()->get_primary_key()));
+			$query = new Mysql\Query($this->get_connection(), \Db\Classes\Mysql\Query::QUERY_UPDATE, $this);
 			$query->set_filter($filter);
 		}
 
 		$query->set_table($this->get_table());
 
-		$result = $query->execute();
+		$result = $query->execute()->current();
 
+		$this->__set($this->get_table()->get_primary_key(), $result->__get($this->get_table()->get_primary_key()));
 		return $result;
 	}
 
+	/**
+	 * @param mixed $key
+	 * @return mixed|null
+	 * @throws \Debug\Classes\CustomException
+	 */
 	public function offsetGet($key)
 	{
 
@@ -155,8 +132,13 @@ abstract class AbstractModel extends \Model\Classes\AbstractModel implements \Db
 		}
 	}
 
+	/**
+	 * @return $this
+	 */
 	public final function before_sleep()
 	{
 		$this->get_table()->before_sleep();
+
+		return $this;
 	}
 } 

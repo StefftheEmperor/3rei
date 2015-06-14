@@ -8,8 +8,13 @@
 
 namespace db\classes\mysql;
 
+use Db\Classes\Result;
+
 class Statement implements \Iterator, \Countable {
 
+	/**
+	 * @var \PDOStatement $pdo_statement
+	 */
 	protected $pdo_statement;
 
 	protected $current = null;
@@ -17,9 +22,12 @@ class Statement implements \Iterator, \Countable {
 
     protected $attributes = array();
 
+	/**
+	 * @var \Db\Classes\Mysql\Connection
+	 */
 	protected $connection;
 	/**
-	 * @var \Db\Mysql\Query
+	 * @var \Db\Classes\Mysql\Query
 	 */
 	protected $query;
 	public function __construct($pdo_statement)
@@ -32,19 +40,33 @@ class Statement implements \Iterator, \Countable {
 		$this->connection = $connection;
 	}
 
+	/**
+	 * @return Connection
+	 */
 	public function get_connection()
 	{
 		return $this->connection;
 	}
+
+	/**
+	 * @return \Db\Mysql\Query
+	 */
 	public function get_query()
 	{
 		return $this->query;
 	}
 
-	public function set_query(\Db\Classes\Mysql\Query $query)
+	/**
+	 * @param Query $query
+	 */
+	public function set_query(Query $query)
 	{
 		$this->query = $query;
 	}
+
+	/**
+	 *
+	 */
 	public function next()
 	{
 
@@ -56,7 +78,12 @@ class Statement implements \Iterator, \Countable {
 			$current = new \Db\Classes\Result($this);
 			foreach ($current_row as $key => $value)
 			{
-				$current->{'set_'.strtolower($key)}($value);
+				$property_name = $this->get_query()->get_property_name_by_alias($key);
+				if ( ! isset($property_name))
+				{
+					$property_name = $key;
+				}
+				$current->{'set_'.strtolower($property_name)}($value);
 			}
 		}
 
@@ -123,11 +150,11 @@ class Statement implements \Iterator, \Countable {
 
 		foreach ($this as $result_row)
 		{
-
 			$result->add($result_row->map_to($class_name));
 		}
 		return $result;
 	}
+
 	public function rewind() {
 		$this->pdo_statement->closeCursor();
 		$this->pdo_statement->execute($this->attributes);
@@ -145,6 +172,10 @@ class Statement implements \Iterator, \Countable {
         return $this->key;
     }
 
+	public function lastInsertId()
+	{
+		return $this->get_connection()->lastInsertId();
+	}
 	/**
 	 * @param $attributes
 	 * @return $this
@@ -156,13 +187,34 @@ class Statement implements \Iterator, \Countable {
 		}
 		try {
 			$this->pdo_statement->execute($this->attributes);
+			if ($this->get_query()->is_insert())
+			{
+				$insert_id = $this->get_connection()->lastInsertId();
+				$current = new Result($this);
+
+				$current->{'set_'.$this->get_query()->get_table()->get_primary_key()}($insert_id);
+				$this->current = $current;
+			}
+			$error_code = $this->pdo_statement->errorCode();
+			$error_info = $this->pdo_statement->errorInfo();
+
+			$error_message = 'Error performing db request';
+			if (is_array($error_info) AND count($error_info) == 3)
+			{
+				$error_message = $error_info[2];
+			}
+			if ($error_code !== \PDO::ERR_NONE)
+			{
+				throw new \Db\Classes\Statement\Exception($error_message, intval($error_code));
+			}
 		}
 		catch (\Exception $e)
 		{
 
-			$exception = new Exception($e->getMessage(), $e->getCode());
-			$exception->set_history($this->get_connection()->get_history());
-			throw $exception;
+			if ($e instanceof \Db\Classes\Exception) {
+				$e->set_history($this->get_connection()->get_history());
+			}
+			throw $e;
 		}
 
 		return $this;

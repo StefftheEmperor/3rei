@@ -4,10 +4,32 @@
 		private $namespaces = array();
 
 		public function __construct() {
-			$this->namespaces[] = new \ClassNamespace('\\', __DIR__);
+			$this->add_namespace('\\', __DIR__);
+			$document_root = $_SERVER['DOCUMENT_ROOT'];
+			$include_path_string = ini_get('include_path');
+			$include_paths = explode(PATH_SEPARATOR, $include_path_string);
+
+			foreach ($include_paths as $include_path)
+			{
+				if (substr($include_path,0,1) === '.')
+				{
+					$include_path = $document_root.DIRECTORY_SEPARATOR.$include_path;
+				}
+				$this->add_namespace('\\', $include_path);
+			}
 		}
 		public function add_namespace($namespace, $location) {
+
+			if (substr($location, -1) !== DIRECTORY_SEPARATOR)
+			{
+				$location = $location . DIRECTORY_SEPARATOR;
+			}
 			$this->namespaces[] = new \ClassNamespace($namespace, $location);
+
+			if (file_exists($location.'autoload.php'))
+			{
+				include_once $location.'autoload.php';
+			}
 		}
 
 		public function autoload($classname)
@@ -51,13 +73,20 @@
 						}
 						$filename = $pathname.$class.'.php';
 
-						if (!file_exists($filename)) {
+						if ( ! file_exists($filename)) {
 							$filename = $pathname . strtolower($classname).'.php';
 						}
 						if (file_exists($filename)) {
 							include_once($filename);
 							$found = TRUE;
 							break 2;
+						}
+						else
+						{
+							if (file_exists($pathname.'autoload.php'))
+							{
+								include_once $pathname.'autoload.php';
+							}
 						}
 					}
 				}

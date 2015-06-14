@@ -12,6 +12,24 @@ namespace Request\Classes;
 class View extends \Model\Classes\AbstractModel implements \Request\Interfaces\Renderable {
 
 	protected $renderer = NULL;
+
+	protected $controller = NULL;
+
+	public function set_controller(\Request\Classes\Controller $controller)
+	{
+		$this->controller = $controller;
+
+		return $this;
+	}
+
+	/**
+	 * @return \Request\Classes\Controller
+	 */
+	public function get_controller()
+	{
+		return $this->controller;
+	}
+
 	public function get_renderer()
 	{
 		return $this->renderer;

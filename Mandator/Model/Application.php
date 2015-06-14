@@ -16,8 +16,8 @@ class Application extends \Db\Classes\AbstractModel {
 	public static function factory_by_id($id)
 	{
 		$application = new static;
-		$filter = \Db\Classes\Filter::factory(\Db\Classes\Expression\Row::factory($application->get_primary_key()), '=', \Db\Classes\Expression\Value::factory($id));
-		$result = \Request\Model\Rewrite\Table::factory($application->get_table_name())->filter($filter)->get_one();
+		$filter = \Db\Classes\Filter\Comparison::factory(\Db\Classes\Expression\Row::factory($application->get_primary_key()), '=', \Db\Classes\Expression\Value::factory($id));
+		$result = \Request\Model\Rewrite\Table::factory($application->get_table_name())->filter($filter)->get_one(\Db\Classes\Table\Select\All::factory());
 
 		return $result->map_to($application);
 	}

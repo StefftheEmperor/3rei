@@ -17,6 +17,16 @@ class Index extends \Template\Classes\Layout {
 		} else {
 			$metadata = new \Template\Classes\Metadata;
 		}
+
+		$backend_root_request = \Request\Classes\Request::factory_by_url($this->get_controller()->get_database_connection(), \Request\Classes\Url::get_instance('/backend'));
+		$menu_node = \Page\Classes\Menu\Node::factory_by_request($backend_root_request);
+
+		$menu_request = $this->get_controller()->get_new_child_request();
+
+		$menu_request->set_params(array('controller' => 'Page\Menu', 'view' => 'Index', 'action' => 'Index', 'menu_id' => $menu_node->get_id()));
+
+		$menu = $menu_request->execute();
+
 		return '<html>
 	<head>
 		<title>'.$metadata->get_title().'</title>
@@ -24,7 +34,7 @@ class Index extends \Template\Classes\Layout {
 	<body class="backend">
 		<div class="content_wrapper">
 			<div class="menu">
-			'.$this->get_menu().'
+			'.$menu.'
 			</div>
 			<div class="content">
 				'.$this->get_content().'

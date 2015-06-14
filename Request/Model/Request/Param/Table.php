@@ -6,7 +6,7 @@
  * Time: 15:47
  */
 
-namespace Request\Model\Param;
+namespace Request\Model\Request\Param;
 
 
 class Table extends \Db\Classes\Table

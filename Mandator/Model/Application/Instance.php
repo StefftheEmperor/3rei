@@ -22,13 +22,13 @@ class Instance extends \Db\Classes\AbstractModel {
 
 		if ( ! ($domain->is_new()))
 		{
-			$domain_filter = \Db\Classes\Filter::factory(\Db\Classes\Expression\Row::factory('domain_id'), '=', \Db\Classes\Expression\Value::factory($domain->get_primary_id()));
-			$result = \Request\Model\Rewrite\Table::factory(static::$request_domain2applcation_instance_table)->filter($domain_filter)->get_one();
+			$domain_filter = \Db\Classes\Filter\Comparison::factory(\Db\Classes\Expression\Row::factory('domain_id'), \Db\Classes\Expression\Value::factory($domain->get_primary_id()));
+			$result = \Request\Model\Rewrite\Table::factory($connection, static::$request_domain2applcation_instance_table)->filter($domain_filter)->get_one(\Db\Classes\Table\Select\All::factory());
 
 			if (isset($result->application_instance_id))
 			{
-				$application_instance_filter = \Db\Classes\Filter::factory(\Db\Classes\Expression\Row::factory($application_instance->get_primary_key()), '=', \Db\Classes\Expression\Value::factory($result->application_instance_id));
-				$result = \Request\Model\Rewrite\Table::factory($application_instance->get_table_name())->filter($application_instance_filter)->get_one();
+				$application_instance_filter = \Db\Classes\Filter\Comparison::factory(\Db\Classes\Expression\Row::factory($application_instance->get_primary_key()), \Db\Classes\Expression\Value::factory($result->application_instance_id));
+				$result = \Request\Model\Rewrite\Table::factory($connection, $application_instance->get_table_name())->filter($application_instance_filter)->get_one(\Db\Classes\Table\Select\All::factory());
 
 				$application_instance = $result->map_to($application_instance);
 			}
@@ -44,5 +44,10 @@ class Instance extends \Db\Classes\AbstractModel {
 		}
 
 		return $this->application;
+	}
+
+	public function get_table_name()
+	{
+		return $this->table_name;
 	}
 }

@@ -13,11 +13,20 @@ class Connection extends \Db\Classes\AbstractConnection implements \Db\Interface
 	protected $dbh = NULL;
 
 	protected static $history = array();
+
+	protected $database = NULL;
+
 	public function __construct($host, $port, $database, $username, $password)
 	{
 		$this->dbh = new \PDO('mysql:host='.$host.';port='.$port.';dbname='.$database, $username, $password);
+
+		$this->database = $database;
 	}
 
+	public function get_database()
+	{
+		return $this->database;
+	}
 	/**
 	 * @param $query
 	 * @param array $attributes
@@ -28,13 +37,22 @@ class Connection extends \Db\Classes\AbstractConnection implements \Db\Interface
 
 		if ($query instanceof \Db\Classes\Mysql\Query) {
 			if ($query->is_select()) {
-				$parts = $query->get_parts();
-				$where = $query->get_filter_as_string();
-				$query_string = $query->get_type().' '.((isset($parts) AND (count($parts) > 0)) ? ('`'.implode('`, `', $parts).'`') : '*').' FROM '.$query->get_from()->get_table_name().$where;
+
+				$select_string = $query->get_select_string($query->get_scope());
+				$from_string = $query->get_from_string($query->get_scope());
+				$join_scope = $query->get_scope()->get_new_child(array(\Db\Classes\Mysql\Scope::OPTION_INHERIT_TABLES));
+				$join_string = $query->get_joins_as_string($join_scope);
+
+				$where_scope = $query->get_scope()->get_new_child(array(\Db\Classes\Mysql\Scope::OPTION_INHERIT_TABLES));
+				$where_scope->add_child($join_scope);
+				$where_string = $query->get_where_as_string($where_scope);
+				$group_string = $query->get_group_string($query->get_scope(array(\Db\Classes\Mysql\Scope::OPTION_INHERIT_TABLES)));
+				$order_string = $query->get_order_string($query->get_scope());
+
+				$query_string = $query->get_type().' '.$select_string.$from_string.$join_string.$where_string.$group_string.$order_string;
 			}
 			elseif ($query->is_describe())
 			{
-
 				$query_string = $query->get_type().' '.$query->get_from()->get_table_name();
 			}
 			elseif ($query->is_insert())
@@ -123,11 +141,12 @@ class Connection extends \Db\Classes\AbstractConnection implements \Db\Interface
 
 		foreach ($columns as $column)
 		{
-			$column_object = $column->map_to('\Db\Classes\Column');
-
+			$column_object = $column->map_to('\Db\Classes\Table\Column');
+			$column_object->set_table($table);
 			if ($column_object->get_key() === 'PRI')
 			{
-				$table->set_primary_key($column_object->get_field());
+				$primary_field = $column_object->get_field();
+				$table->set_primary_key($primary_field);
 			}
 		}
 
@@ -163,6 +182,22 @@ class Connection extends \Db\Classes\AbstractConnection implements \Db\Interface
 		}
 
 		return $sleeping_parts;
+	}
+
+	/**
+	 * @return string
+	 */
+	public function last_insert_id()
+	{
+		return $this->dbh->lastInsertId();
+	}
+
+	/**
+	 * @return string
+	 */
+	public function lastInsertId()
+	{
+		return $this->last_insert_id();
 	}
 
 	public function get_last_query()

@@ -15,7 +15,7 @@ class User extends \AbstractModel {
 	{
 
 		$filter = new \Db\Filter('fb_user_id', '=', $fb_userid);
-		$result = \Db\Table::factory('user')->filter($filter)->get_one();
+		$result = \Db\Table::factory('user')->filter($filter)->get_one(\Db\Classes\Table\Select\All::factory());
 
 		return $result->map_to(get_called_class());
 	}

@@ -14,7 +14,7 @@ class Submit extends \Structure\Classes\Form\AbstractValue {
 	{
 		$this->get_attributes()->type = 'submit';
 		$this->get_attributes()->value = $this->get_value();
-
+		$this->get_attributes()->name = $this->get_key();
 		return '<input'.$this->get_attributes_html().' />';
 	}
 }

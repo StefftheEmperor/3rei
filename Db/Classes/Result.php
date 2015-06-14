@@ -64,19 +64,24 @@ class Result extends \Model\Classes\AbstractModel {
 
 		foreach ($this->get_query()->get_filter() as $filter)
 		{
-			if ($filter->get_operator() === '=') {
-				$operand1 = $filter->get_operand1();
+			if ($filter instanceof \Db\Classes\Filter\Comparison)
+			{
+				$operand1 = $filter->get_operand(0);
 				if ($operand1 instanceof \Db\Classes\Expression\AbstractExpression)
 				{
 					$operand1 = $operand1->get_filtered();
 				}
 
-				$operand2 = $filter->get_operand2();
+				$operand2 = $filter->get_operand(1);
 				if ($operand2 instanceof \Db\Classes\Expression\AbstractExpression)
 				{
 					$operand2 = $operand2->get_filtered();
 				}
 
+				if ($operand1 instanceof \Db\Classes\Table\Column)
+				{
+					$operand1 = $operand1->get_field();
+				}
 				$instance->{'set_' . strtolower($operand1)}($operand2);
 			}
 		}
@@ -93,7 +98,7 @@ class Result extends \Model\Classes\AbstractModel {
 		{
 			$instance->{'set_'.strtolower($key)}($value);
 
-			if ($instance instanceof \Db\AbstractModel) {
+			if ($instance instanceof \Db\Classes\AbstractModel) {
 				if ($key == $instance->get_table()->get_primary_key()) {
 					$instance->is_new(FALSE);
 				}
