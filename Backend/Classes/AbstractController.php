@@ -8,10 +8,9 @@
 
 namespace Backend\Classes;
 
+use Request\Classes\Controller;
 
-use Request\Classes\Request;
-
-abstract class AbstractController extends \Request\Classes\Controller
+abstract class AbstractController extends Controller
 {
 
 }

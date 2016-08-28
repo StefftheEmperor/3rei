@@ -8,12 +8,14 @@
 
 namespace Structure\Classes;
 
-
-class Table extends \Structure\Classes\AbstractStructure implements \Request\Interfaces\Renderable {
+use Structure\Classes\AbstractStructure;
+use Request\Interfaces\Renderable;
+use Structure\Classes\Table\Row;
+class Table extends AbstractStructure implements Renderable {
 
 	protected $rows = array();
 
-	public function add_row(\Structure\Classes\Table\Row $row)
+	public function add_row(Row $row)
 	{
 		$this->rows[] = $row;
 

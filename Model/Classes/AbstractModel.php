@@ -151,7 +151,7 @@ abstract class AbstractModel implements \ArrayAccess, \Iterator {
 	public function offsetExists($offset)
 	{
 		$key = $this->getKeyByOffset($offset);
-		return $key !== FALSE;
+		return $key !== FALSE AND isset($this->values[$key]);
 	}
 
 	/**

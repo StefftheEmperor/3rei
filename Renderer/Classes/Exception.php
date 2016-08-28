@@ -8,7 +8,8 @@
 
 namespace Renderer\Classes;
 
+use Debug\Classes\CustomException;
 
-class Exception extends \Debug\Classes\CustomException {
+class Exception extends CustomException {
 
 }

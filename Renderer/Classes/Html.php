@@ -8,8 +8,10 @@
 
 namespace Renderer\Classes;
 
+use Renderer\Classes\AbstractRenderer;
+use Renderer\Classes\Exception;
 
-class Html extends \Renderer\Classes\AbstractRenderer {
+class Html extends AbstractRenderer {
 
 	public function render($view)
 	{
@@ -23,7 +25,7 @@ class Html extends \Renderer\Classes\AbstractRenderer {
 			if (method_exists($view, 'get_html')) {
 				return $view->get_html();
 			} else {
-				throw new \Renderer\Classes\Exception('View '.get_class($view).' does not support '.get_called_class().' as renderer');
+				throw new Exception('View '.get_class($view).' does not support '.get_called_class().' as renderer');
 			}
 		}
 	}

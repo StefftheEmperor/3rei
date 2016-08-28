@@ -77,7 +77,7 @@
 							$filename = $pathname . strtolower($classname).'.php';
 						}
 						if (file_exists($filename)) {
-							include_once($filename);
+							require_once($filename);
 							$found = TRUE;
 							break 2;
 						}
@@ -85,7 +85,7 @@
 						{
 							if (file_exists($pathname.'autoload.php'))
 							{
-								include_once $pathname.'autoload.php';
+								require_once($pathname.'autoload.php');
 							}
 						}
 					}

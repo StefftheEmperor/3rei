@@ -8,7 +8,12 @@
 
 namespace Db\Classes;
 
-class Result extends \Model\Classes\AbstractModel {
+use Model\Classes\AbstractModel;
+use Db\Classes\Filter\Comparison;
+use Db\Classes\Expression\AbstractExpression;
+use Db\Classes\Table\Column;
+
+class Result extends AbstractModel {
 
 	protected $statement = NULL;
 
@@ -42,7 +47,6 @@ class Result extends \Model\Classes\AbstractModel {
 
 	public function key()
 	{
-
 		return parent::key();
 	}
 
@@ -64,21 +68,21 @@ class Result extends \Model\Classes\AbstractModel {
 
 		foreach ($this->get_query()->get_filter() as $filter)
 		{
-			if ($filter instanceof \Db\Classes\Filter\Comparison)
+			if ($filter instanceof Comparison)
 			{
 				$operand1 = $filter->get_operand(0);
-				if ($operand1 instanceof \Db\Classes\Expression\AbstractExpression)
+				if ($operand1 instanceof AbstractExpression)
 				{
 					$operand1 = $operand1->get_filtered();
 				}
 
 				$operand2 = $filter->get_operand(1);
-				if ($operand2 instanceof \Db\Classes\Expression\AbstractExpression)
+				if ($operand2 instanceof AbstractExpression)
 				{
 					$operand2 = $operand2->get_filtered();
 				}
 
-				if ($operand1 instanceof \Db\Classes\Table\Column)
+				if ($operand1 instanceof Column)
 				{
 					$operand1 = $operand1->get_field();
 				}
@@ -91,7 +95,6 @@ class Result extends \Model\Classes\AbstractModel {
 			foreach ($instance->get_table()->get_columns() as $column)
 			{
 				$instance->{'set_'.strtolower($column->get_field())}(NULL);
-
 			}
 		}
 		foreach ($this as $key => $value)

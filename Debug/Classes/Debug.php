@@ -6,10 +6,11 @@
  * Time: 20:34
  */
 namespace Debug\Classes;
+
 class Debug {
 
 	protected static $current_exception = NULL;
-	public function exception_handler(\Exception $incoming_exception)
+	public function exception_handler(\Throwable $incoming_exception)
 	{
 
 		if ($incoming_exception instanceof CustomException) {

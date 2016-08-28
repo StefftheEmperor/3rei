@@ -8,11 +8,20 @@
 
 namespace Backend\View\Rewrite;
 
+use \Request\Classes as Request_Classes;
 
-class Edit extends \Request\Classes\View {
+class Edit extends Request_Classes\View {
 
 	public function get_html()
 	{
-		return $this->get_form().$this->get_params();
+		if (isset($this->params))
+		{
+			$params = $this->params;
+		}
+		else
+		{
+			$params = '';
+		}
+		return $this->get_form().$params;
 	}
 }

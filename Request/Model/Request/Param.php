@@ -9,9 +9,12 @@
 namespace Request\Model\Request;
 
 
+use Db\Classes\AbstractModel;
 use Db\Classes\Filter\AddAnd;
+use Db\Interfaces\Model;
+use Request\Interfaces\Request\Attribute;
 
-class Param extends \Db\Classes\AbstractModel implements \Db\Interfaces\Model {
+class Param extends AbstractModel implements Model, Attribute {
 	protected $primary_key = 'id';
 	protected $table_name = 'request__param';
 

@@ -10,8 +10,11 @@ namespace Structure\Classes;
 
 
 use Debug\Classes\CustomException;
+use Request\Interfaces\Renderable;
+use Structure\Classes\Attributes;
+use Request\Classes\Url;
 
-class AbstractStructure  implements \Request\Interfaces\Renderable
+class AbstractStructure  implements Renderable
 {
 
 	protected $renderer = NULL;
@@ -19,7 +22,7 @@ class AbstractStructure  implements \Request\Interfaces\Renderable
 
 	final public function __construct()
 	{
-		$this->attributes = new \Structure\Classes\Attributes;
+		$this->attributes = new Attributes;
 
 		$reflection = new \ReflectionClass($this);
 
@@ -64,7 +67,7 @@ class AbstractStructure  implements \Request\Interfaces\Renderable
 
 		foreach ($this->get_attributes() as $attribute_name => $attribute_value)
 		{
-			if ($attribute_value instanceof \Request\Classes\Url)
+			if ($attribute_value instanceof Url)
 			{
 				$attribute_value = $attribute_value->get_absolute_url();
 			}

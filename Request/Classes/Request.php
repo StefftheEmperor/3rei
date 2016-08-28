@@ -6,9 +6,19 @@
  * Time: 17:27
  */
 namespace Request\Classes;
-use Request\Model\Rewrite;
 
-class Request extends \Model\Classes\AbstractModel {
+use Request\Classes\Controller\Exception;
+use Request\Classes\Rewrite\Params;
+use Request\Layout\Plain;
+use Request\Model\Request\Attribute;
+use Request\Model\Request\Param;
+use Request\Model\Rewrite;
+use Model\Classes\AbstractModel;
+use Db\Classes\AbstractConnection;
+use Request\Classes\Url;
+use Template\Classes\Layout;
+
+class Request extends AbstractModel {
 
 	/**
 	 * @var \Request\Classes\Url
@@ -33,10 +43,10 @@ class Request extends \Model\Classes\AbstractModel {
 	 * @param Url $url
 	 * @return \Request\Classes\Request
 	 */
-	public static function factory_by_url(\Db\Classes\AbstractConnection $connection, \Request\Classes\Url $url)
+	public static function factory_by_url(AbstractConnection $connection, Url $url)
 	{
 		$request = new static($url);
-		$rewrite_model = \Request\Model\Rewrite::factory_by_url($connection, $url);
+		$rewrite_model = Rewrite::factory_by_url($connection, $url);
 		$request_model = $rewrite_model->get_request_model();
 
 		$request->set_model($request_model);
@@ -47,7 +57,7 @@ class Request extends \Model\Classes\AbstractModel {
 	 * @param $id
 	 * @return static
 	 */
-	public static function factory_by_id(\Db\Classes\AbstractConnection $connection, $id)
+	public static function factory_by_id(AbstractConnection $connection, $id)
 	{
 		$request = new static;
 		$model = \Request\Model\Request::factory_by_id($connection, $id);
@@ -73,7 +83,7 @@ class Request extends \Model\Classes\AbstractModel {
 	 * @param Url $url
 	 * @return $this
 	 */
-	public function set_url(\Request\Classes\Url $url)
+	public function set_url(Url $url)
 	{
 		$this->url = $url;
 
@@ -88,7 +98,8 @@ class Request extends \Model\Classes\AbstractModel {
 		if ( ! isset($this->url))
 		{
 			$rewrite = Rewrite::factory_by_request($this->get_model()->get_connection(), $this->get_model());
-			$this->url = $rewrite->get_url();
+
+			$this->url = $rewrite->get_rewritten_url($this);
 		}
 		return $this->url;
 	}
@@ -133,6 +144,10 @@ class Request extends \Model\Classes\AbstractModel {
 		{
 			$this->load_params();
 		}
+		elseif (isset($model))
+		{
+			return $model->get_params();
+		}
 
 		return $this->params;
 	}
@@ -146,6 +161,7 @@ class Request extends \Model\Classes\AbstractModel {
 		if (isset($model)) {
 			$this->get_model()->load_params();
 		}
+
 		return $this;
 	}
 
@@ -163,7 +179,7 @@ class Request extends \Model\Classes\AbstractModel {
 			{
 				return $this->params[$offset];
 			} else {
-				return NULL;
+				return Attribute::factory($offset, NULL);
 			}
 		}
 	}
@@ -185,7 +201,7 @@ class Request extends \Model\Classes\AbstractModel {
 		return $this;
 	}
 
-	public function set_params(Array $params = NULL)
+	public function set_params(Params $params = NULL)
 	{
 		if (isset($params)) {
 			foreach ($params as $param_key => $param_value) {
@@ -195,6 +211,24 @@ class Request extends \Model\Classes\AbstractModel {
 		return $this;
 	}
 
+	/**
+	 * @param $offset
+	 * @return bool
+	 */
+	public function attribute_exists($offset)
+	{
+		$model = $this->get_model();
+		if (isset($model)) {
+			return $this->get_model()->attribute_exists($offset);
+		} else {
+			return (isset($this->attributes[$offset]));
+		}
+	}
+
+	public function has_attribute($offset)
+	{
+		return $this->attribute_exists($offset);
+	}
 
 	public function get_attribute($offset)
 	{
@@ -225,6 +259,10 @@ class Request extends \Model\Classes\AbstractModel {
 
 	public function set_attribute($offset, $value)
 	{
+		if (isset($value) AND ! $value instanceof \Request\Interfaces\Request\Attribute)
+		{
+			$value = Attribute::factory($offset, $value);
+		}
 		$model = $this->get_model();
 		if (isset($model)) {
 			$this->get_model()->set_attribute($offset, $value);
@@ -298,7 +336,7 @@ class Request extends \Model\Classes\AbstractModel {
 	public function get_child_request()
 	{
 		$child_model = new \Request\Model\Request($this->get_model()->get_connection());
-		$child_request = new \Request\Classes\Request;
+		$child_request = new static;
 		$child_request->set_model($child_model);
 		$child_request->set_post_data($this->get_post_data());
 
@@ -309,47 +347,50 @@ class Request extends \Model\Classes\AbstractModel {
 	 */
 	public function execute()
 	{
-		if ( ! ($this->param_exists('module') AND $this->param_exists('controller') AND $this->param_exists('action')))
+		if ( ! ($this->attribute_exists('module') AND $this->attribute_exists('controller') AND $this->attribute_exists('action')))
 		{
-			$this->set_param('module', 'Error');
-			$this->set_param('controller', 'Error');
-			$this->set_param('action', 'Error_404');
-			$this->set_param('view', NULL);
+			$this->set_attribute('module', 'Error');
+			$this->set_attribute('controller', 'Error');
+			$this->set_attribute('action', 'Error_404');
+			$this->set_attribute('view', NULL);
 		}
 
-		if ( ! $this->param_exists('layout'))
+		if ( ! $this->attribute_exists('layout'))
 		{
-			$this->set_param('layout', 'Index');
+			$this->set_attribute('layout', 'Index');
 		}
-		$module = $this->get_param('module');
-		$controller = $this->get_param('controller');
-		$action = $this->get_param('action');
+		$module = $this->get_attribute('module');
+		$controller = $this->get_attribute('controller');
+		$action = $this->get_attribute('action');
 
-		$layout = $this->get_param('layout');
+		$layout = $this->get_attribute('layout');
 
-		$controller_reflection = new \ReflectionClass('\\'.$module.'\\Controller\\'.$controller);
+		$str_module = $module->get_value();
+		$str_controller = $controller->get_value();
+		$controller_reflection = new \ReflectionClass('\\'.$str_module.'\\Controller\\'.$str_controller);
 		$controller_instance = $controller_reflection->newInstance($this);
 		if ($controller_instance->get_layout() !== NULL)
 		{
 			$layout = $controller_instance->get_layout();
 		} else {
-			$layout_class = '\\'.$module.'\\Layout\\'.$layout;
+			$layout_class = '\\'.$module->get_value().'\\Layout\\'.$layout->get_value();
 			if (class_exists($layout_class))
 			{
 				$layout = new $layout_class;
 			} else {
-				$layout = new \Template\Classes\Layout;
+				$layout = new Layout;
 			}
 		}
 		$controller_instance->set_layout($layout);
 		call_user_func(array($controller_instance, 'init'));
 		call_user_func(array($controller_instance, 'before_action'));
-		$action_method = 'action_'.strtolower($action);
+		$action_method = 'action_'.strtolower($action->get_value());
 		if (method_exists($controller_instance, $action_method)) {
 			call_user_func(array($controller_instance, $action_method));
 		}
-		else {
-			throw new \Request\Classes\Controller\Exception('Action '.$action.' does not exist in controller '.$controller);
+		else
+		{
+			throw new Exception('Action '.$action_method.' does not exist in controller '.$str_controller);
 		}
 		call_user_func(array($controller_instance, 'after_action'));
 
@@ -361,7 +402,7 @@ class Request extends \Model\Classes\AbstractModel {
 		$layout = $controller_instance->get_layout();
 		if ( ! isset($layout))
 		{
-			$layout = new \Request\Layout\Plain;
+			$layout = new Plain;
 		}
 
 		$layout->set_controller($controller_instance);

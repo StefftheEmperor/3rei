@@ -8,6 +8,7 @@
 
 namespace Request\Classes;
 
+use Request\Classes\View\Exception;
 
 class Controller {
 
@@ -22,7 +23,7 @@ class Controller {
 	/**
 	 * @param Request $request
 	 */
-	public final function __construct(\Request\Classes\Request $request)
+	public final function __construct(Request $request)
 	{
 		$this->request = $request;
 	}
@@ -84,16 +85,16 @@ class Controller {
 
 			$request = $this->get_request();
 
-			if ($request->param_exists('view')) {
-				$view_name = $request->get_param('view');
-				$view_class_name = '\\' . $request->get_param('module') . '\\View\\' . $request->get_param('controller') . '\\' . $view_name;
+			if ($request->attribute_exists('view')) {
+				$view_name = $request->get_attribute('view')->get_value();
+				$view_class_name = '\\' . $request->get_attribute('module')->get_value() . '\\View\\' . $request->get_attribute('controller')->get_value() . '\\' . $view_name;
 			} else {
-				$view_class_name = '\\' . $request->get_param('module') . '\\View\\' . $request->get_param('controller') . '\\' . $request->get_param('action');
+				$view_class_name = '\\' . $request->get_attribute('module')->get_value() . '\\View\\' . $request->get_attribute('controller')->get_value() . '\\' . $request->get_attribute('action')->get_value();
 			}
 
 			if ( ! class_exists($view_class_name))
 			{
-				throw new \Request\Classes\View\Exception('View not found: '.$view_class_name);
+				throw new Exception('View not found: '.$view_class_name);
 			}
 			$view_class_reflector = new \ReflectionClass($view_class_name);
 

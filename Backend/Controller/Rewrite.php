@@ -9,7 +9,12 @@
 namespace Backend\Controller;
 
 
-class Rewrite extends \Backend\Classes\AbstractController {
+use \Request\Classes\Rewrite\Params;
+use \Structure\Classes as Structure;
+use \Backend\Classes as Backend_Classes;
+
+
+class Rewrite extends Backend_Classes\AbstractController {
 
 	public function action_list()
 	{
@@ -43,12 +48,19 @@ class Rewrite extends \Backend\Classes\AbstractController {
 	public function action_edit()
 	{
 
-		$rewrite_id = $this->get_request()->get_attribute('rewrite_id');
+		$request = $this->get_request();
+		$rewrite_id = NULL;
+		if ($request->attribute_exists('rewrite_id'))
+		{
+			$rewrite_id = $request->get_attribute('rewrite_id')->get_value();
+		}
+
 		if (isset($rewrite_id)) {
 			$rewrite = \Request\Model\Rewrite::factory_by_id($this->get_database_connection(), $rewrite_id);
 		} else {
 			$rewrite = new \Request\Model\Rewrite($this->get_database_connection());
 		}
+
 
 		$form = \Structure\Classes\Form::factory('rewrite');
 		$form->set_method(\Structure\Classes\Form::METHOD_POST);
@@ -77,14 +89,17 @@ class Rewrite extends \Backend\Classes\AbstractController {
 		}
 		$this->get_view()->form = $form;
 
-		$params_request = $this->get_new_child_request();
-		$params_request->set_params(array('module' => 'Backend', 'controller' => 'Request\Params', 'action' => 'Edit', 'layout' => 'Plain'));
+		if (isset($rewrite_id))
+		{
+			$params_request = $this->get_new_child_request();
+			$params_request->set_params(Params::factory(array('module' => 'Backend', 'controller' => 'Request\Params', 'action' => 'Edit', 'layout' => 'Plain')));
 
-		if (isset($rewrite->request_id)) {
-			$params_request->set_attribute('request_id', $rewrite->request_id);
+			if (isset($rewrite->request_id)) {
+				$params_request->set_attribute('request_id', $rewrite->request_id);
+			}
+
+			$this->get_view()->params = $params_request->execute();
 		}
-
-		$this->get_view()->params = $params_request->execute();
 	}
 
 	public function action_add()

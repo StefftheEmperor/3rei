@@ -8,8 +8,9 @@
 
 namespace Backend\View\Menu;
 
+namespace Request\Classes;
 
-class Index extends \Request\Classes\View
+class Index extends View
 {
 
 	public function get_html()

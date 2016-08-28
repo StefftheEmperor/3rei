@@ -7,14 +7,17 @@
  */
 
 namespace Structure\Classes;
+
+use Structure\Classes\AbstractStructure;
 use Request\Classes\Request\Post;
 use Structure\Interfaces\Value;
+use Structure\Classes\Form\Input\Hidden;
 
 /**
  * Class Form
  * @package Structure\Classes
  */
-class Form extends \Structure\Classes\AbstractStructure
+class Form extends AbstractStructure
 {
 
 	const METHOD_POST = 'post';
@@ -70,7 +73,7 @@ class Form extends \Structure\Classes\AbstractStructure
 	public function init($identifier)
 	{
 		$this->identifier = $identifier;
-		$this->add(\Structure\Classes\Form\Input\Hidden::factory($this->identifier.'_ds','1'));
+		$this->add(Hidden::factory($this->identifier.'_ds','1'));
 	}
 
 	/**

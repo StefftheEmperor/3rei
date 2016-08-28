@@ -1,23 +1,24 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: stefan
- * Date: 31.05.15
- * Time: 16:46
- */
 
 namespace Backend\Controller\Page;
 
+use \Page\Classes\Menu as Page_Menu_Class;
 
-class Menu extends \Backend\Classes\AbstractController
+use Backend\Classes\AbstractController;
+
+use \Page\Classes as Page_Classes;
+
+use \Request\Classes as Request_Classes;
+
+class Menu extends AbstractController
 {
 
 	public function action_index()
 	{
-		$id = $this->get_request()->get_param('menu_id');
-		$menu_node = \Page\Classes\Menu\Node::factory_by_id($this->get_database_connection(), $id);
+		$id = $this->get_request()->get_param('menu_id')->get_value();
+		$menu_node = Page_Menu_Class\Node::factory_by_id($this->get_database_connection(), $id);
 
-		$menu = \Page\Classes\Menu::factory($menu_node);
+		$menu = Page_Classes\Menu::factory($menu_node);
 
 		$children = $menu->get_children();
 
@@ -25,7 +26,7 @@ class Menu extends \Backend\Classes\AbstractController
 		foreach ($children as $child)
 		{
 			$request = $this->get_new_child_request();
-			$request->set_params(array('controller' => 'Page\Menu', 'action' => 'Index', 'menu_id' => $child->get_id()));
+			$request->set_params(Request_Classes\Rewrite\Params::factory(array('controller' => 'Page\Menu', 'action' => 'Index', 'menu_id' => $child->get_id())));
 
 			$children_views[] = $request->execute();
 		}

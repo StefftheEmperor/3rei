@@ -8,8 +8,21 @@
 
 namespace Request\Model;
 
-class Rewrite extends \Db\Classes\AbstractModel {
+use Db\Classes\AbstractModel;
+use Db\Classes\Filter\Regexp;
+use Db\Interfaces\Connection;
+use Db\Classes\Expression\Value;
+use Request\Classes\Rewrite\Params;
+use Request\Classes\Url;
+use Db\Classes\Expression\Row;
+use Db\Classes\Table\Select\All;
+use Db\Classes\Filter\Comparison;
+use Request\Interfaces\Request\Attributes;
+use Request\Model\Rewrite\Table;
+use Request\Model\Request;
 
+class Rewrite extends AbstractModel
+{
 	protected $primary_key = 'id';
 	protected $table_name = 'rewrite';
 
@@ -18,16 +31,24 @@ class Rewrite extends \Db\Classes\AbstractModel {
 	protected $params = NULL;
 
 	protected $param_keys = NULL;
+
+	public function init()
+	{
+		parent::init();
+
+		$this->params = new Params();
+	}
+
 	/**
 	 * @param \Request\Classes\Url $url
 	 * @return \Request\Model\Rewrite
 	 */
-	public static function factory_by_url(\Db\Interfaces\Connection $connection, \Request\Classes\Url $url = NULL)
+	public static function factory_by_url(Connection $connection, Url $url = NULL)
 	{
 		if (isset($url))
 		{
-			$filter = \Db\Classes\Filter\Regexp::factory(\Db\Classes\Expression\Value::factory($url->get_url()), \Db\Classes\Expression\Row::factory('regexp_pattern'));
-			$result = $connection->get_model_reflection('\Request\Model\Rewrite\Table')->factory('rewrite')->filter($filter)->get_one(\Db\Classes\Table\Select\All::factory());
+			$filter = Regexp::factory(Value::factory($url->get_url()), Row::factory('regexp_pattern'));
+			$result = $connection->get_model_reflection('\Request\Model\Rewrite\Table')->factory('rewrite')->filter($filter)->get_one(All::factory());
 
 			$rewrite = $result->map_to(get_called_class());
 			$rewrite->parse_params($url);
@@ -36,7 +57,7 @@ class Rewrite extends \Db\Classes\AbstractModel {
 		else
 		{
 			$instance = new static;
-			$instance->set_table(\Request\Model\Rewrite\Table::factory('rewrite'));
+			$instance->set_table(Table::factory('rewrite'));
 			return $instance;
 		}
 	}
@@ -45,9 +66,9 @@ class Rewrite extends \Db\Classes\AbstractModel {
 	 * @param $id
 	 * @return \Request\Model\Rewrite
 	 */
-	public static function factory_by_id(\Db\Interfaces\Connection $connection, $id)
+	public static function factory_by_id(Connection $connection, $id)
 	{
-		$filter = \Db\Classes\Filter\Comparison::factory(\Db\Classes\Expression\Row::factory('id'),\Db\Classes\Expression\Value::factory($id));
+		$filter = Comparison::factory(Row::factory('id'),Value::factory($id));
 		$result = $connection->get_model_reflection('\Request\Model\Rewrite\Table')->factory('rewrite')->filter($filter)->get_one(\Db\Classes\Table\Select\All::factory());
 
 		$rewrite = $result->map_to(get_called_class());
@@ -59,11 +80,11 @@ class Rewrite extends \Db\Classes\AbstractModel {
 	 * @param Request $request
 	 * @return static
 	 */
-	public static function factory_by_request(\Db\Interfaces\Connection $connection, \Request\Model\Request $request)
+	public static function factory_by_request(Connection $connection, \Request\Model\Request $request)
 	{
 		if ($request->__isset('id')) {
-			$filter = \Db\Classes\Filter\Comparison::factory(\Db\Classes\Expression\Row::factory('request_id'), \Db\Classes\Expression\Value::factory($request->get_id()));
-			$result = $connection->get_model_reflection('\Request\Model\Rewrite\Table')->factory('rewrite')->filter($filter)->get_one(\Db\Classes\Table\Select\All::factory());
+			$filter = Comparison::factory(Row::factory('request_id'), Value::factory($request->get_id()));
+			$result = $connection->get_model_reflection('\Request\Model\Rewrite\Table')->factory('rewrite')->filter($filter)->get_one(All::factory());
 
 			$rewrite = $result->map_to(get_called_class());
 		} else {
@@ -119,7 +140,54 @@ class Rewrite extends \Db\Classes\AbstractModel {
 		$this->parse_url();
 	}
 
-	public function parse_params(\Request\Classes\Url $url = NULL)
+	public function get_rewritten_url($source)
+	{
+		$rewrite_url = $this->get_url();
+
+		$url = '';
+
+		$matches = array();
+		preg_match_all('/\$([a-zA-Z0-9_\-]*)\$/', $rewrite_url, $matches, PREG_OFFSET_CAPTURE | PREG_SET_ORDER);
+
+		$end = 0;
+		if (count($matches) > 0)
+		{
+			$matches_iterator = 0;
+			foreach ($matches as $match_key => $match) {
+				$subject = $match[1][0];
+
+				if ($matches_iterator == 0) {
+					$url .= substr($rewrite_url, 0, $match[0][1]);
+				} else {
+					$url .= substr($rewrite_url, $end, $match[0][1] - $end);
+				}
+
+				if ($source instanceof Attributes)
+				{
+					if (isset($source) AND isset($source[$subject])) {
+						$url .= $source[$subject];
+					}
+				}
+				elseif ($source instanceof \Request\Classes\Request)
+				{
+					if ($source->has_attribute($subject))
+					{
+						$url .= $source->get_attribute($subject)->get_value();
+					}
+				}
+				$end = $match[0][1] + strlen($match[0][0]);
+				$matches_iterator++;
+			}
+		}
+		else
+		{
+			$url = $rewrite_url;
+		}
+
+		return $url;
+	}
+
+	public function parse_params(Url $url = NULL)
 	{
 		$matches = $params = array();
 		if ( ! $this->__isset('url'))
@@ -132,23 +200,48 @@ class Rewrite extends \Db\Classes\AbstractModel {
 		$this->parse_url();
 
 		$url_matches = array();
-		preg_match_all('/'.str_replace(array('/'),array('\/'),$this->__get('regexp_pattern')).'/', $url_string, $url_matches, PREG_OFFSET_CAPTURE | PREG_SET_ORDER);
+		$regexp_pattern = $this->__get('regexp_pattern');
+		preg_match_all('/'.str_replace(array('/'),array('\/'), $regexp_pattern).'/', $url_string, $url_matches, PREG_OFFSET_CAPTURE | PREG_SET_ORDER);
 
 		if (count($url_matches) > 0) {
 			foreach ($url_matches[0] as $url_match_key => $url_match) {
-				if ($url_match_key > 0) {
-					$this->params[$this->param_keys[$url_match_key - 1]] = $url_match[0];
+				if ($url_match_key > 0)
+				{
+					$attribute_key = $this->param_keys[$url_match_key - 1];
+					$attribute_value = $url_match[0];
+					$this->set_param($attribute_key, Request\Attribute::factory($attribute_key, $attribute_value));
 				}
 			}
 		}
 	}
 
-	public static function get_all(\Db\Interfaces\Connection $connection)
+	/**
+	 * @return Params
+	 */
+	public function get_params()
+	{
+		if ( ! isset($this->params))
+		{
+			$this->params = new Params;
+		}
+		return $this->params;
+	}
+
+	public function set_param($offset, $value)
+	{
+		$this->get_params()->offsetSet($offset, $value);
+	}
+	/**
+	 * @param Connection $connection
+	 * @return mixed
+	 */
+	public static function get_all(Connection $connection)
 	{
 		$result = $connection->get_model_reflection('\Request\Model\Rewrite\Table')->factory('rewrite')->select(\Db\Classes\Table\Select\All::factory())->get_all();
 
 		return $result->map_to(get_called_class());
 	}
+
 	/**
 	 * @return null|\Request\Model\Request
 	 */

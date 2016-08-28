@@ -8,8 +8,9 @@
 
 namespace Backend\View\Rewrite;
 
+use Request\Classes\View;
 
-class RewriteList extends \Request\Classes\View {
+class RewriteList extends View {
 
 	public function get_html()
 	{

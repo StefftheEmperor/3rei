@@ -9,7 +9,17 @@
 namespace Request\Model;
 
 
+use Db\Classes\Filter\Comparison;
+use Db\Classes\Mysql\Expression\Row;
+use Db\Classes\Mysql\Expression\Value;
+use Db\Classes\Table\Select\All;
+use Request\Classes\Request\Attribute\Exception;
+use Request\Classes\Rewrite\Attributes;
+use Request\Classes\Rewrite\Params;
+use Request\Interfaces\Request\Attribute;
+use Request\Model\Request\Param;
 use Request\Model\Request\Param\Table;
+use Request\Model\Request as Request_Model;
 
 class Request extends \Db\Classes\AbstractModel implements \Db\Interfaces\Model {
 	protected $primary_key = 'id';
@@ -55,11 +65,11 @@ class Request extends \Db\Classes\AbstractModel implements \Db\Interfaces\Model 
 		{
 			if ($param->get_key() == $key)
 			{
-				return $param->get_value();
+				return $param;
 			}
 		}
 
-		return NULL;
+		return \Request\Model\Request\Attribute::factory($key, NULL);
 	}
 
 	public function param_exists($key)
@@ -88,7 +98,14 @@ class Request extends \Db\Classes\AbstractModel implements \Db\Interfaces\Model 
 			{
 				if (isset($value))
 				{
-					$param->set_value($value);
+					if ($value instanceof Attribute)
+					{
+						$param->set_value($param->get_value());
+					}
+					else
+					{
+						$param->set_value($value);
+					}
 				} else {
 					unset($this->params[$param_key]);
 				}
@@ -99,18 +116,18 @@ class Request extends \Db\Classes\AbstractModel implements \Db\Interfaces\Model 
 		if ( ! $found)
 		{
 			if (isset($value)) {
-				$param = new \Request\Model\Request\Param($this->get_connection());
+				$param = new Param($this->get_connection());
 				$param->set_key($key);
 				$param->set_value($value);
 
-				$this->params[] = $param;
+				$this->params->offsetSet($key, $param);
 			}
 		}
 
 		return $this;
 	}
 
-	public function set_params(array $params)
+	public function set_params(Params $params)
 	{
 		foreach ($params as $param_key => $param_value)
 		{
@@ -122,12 +139,13 @@ class Request extends \Db\Classes\AbstractModel implements \Db\Interfaces\Model 
 
 	public function load_params()
 	{
-		$params = array();
+		$params = new Params();
 		if ($this->offsetExists('id')) {
-			$result_set = \Db\Classes\Table::factory($this->get_connection(), 'request__request2params')->filter(\Db\Classes\Filter\Comparison::factory(\Db\Classes\Mysql\Expression\Row::factory('request_id'), \Db\Classes\Mysql\Expression\Value::factory($this->get_id())))->get_all(\Db\Classes\Table\Select\All::factory());
+			$result_set = \Db\Classes\Table::factory($this->get_connection(), 'request__request2params')->filter(Comparison::factory(Row::factory('request_id'), Value::factory($this->get_id())))->get_all(All::factory());
 			foreach ($result_set as $result_row)
 			{
-				$params[] = Table::factory($this->get_connection(), 'request__param')->filter(\Db\Classes\Filter\Comparison::factory(\Db\Classes\Mysql\Expression\Row::factory('id'), \Db\Classes\Mysql\Expression\Value::factory($result_row['param_id'])))->get_one(\Db\Classes\Table\Select\All::factory())->map_to('\Request\Model\Request\Param');
+				$param = Table::factory($this->get_connection(), 'request__param')->filter(Comparison::factory(Row::factory('id'), Value::factory($result_row['param_id'])))->get_one(All::factory())->map_to('\Request\Model\Request\Param');
+				$params->offsetSet($param->get_key(), $param);
 			}
 		}
 
@@ -136,16 +154,35 @@ class Request extends \Db\Classes\AbstractModel implements \Db\Interfaces\Model 
 
 	public function set_attribute($offset, $value)
 	{
-		$this->attributes[$offset] = $value;
+		$this->get_attributes()->offsetSet($offset, $value);
 
 		return $this;
 	}
 
 	public function set_attributes($attributes)
 	{
-		$this->attributes = $attributes;
-
+		if ( ! $attributes instanceof Attributes)
+		{
+			throw new Exception;
+		}
+		if ($attributes instanceof Params)
+		{
+			$this->attributes = new Attributes;
+			foreach ($attributes as $attribute_key => $attribute_value)
+			{
+				$this->attributes->offsetSet($attribute_key, $attribute_value);
+			}
+		}
+		else
+		{
+			$this->attributes = $attributes;
+		}
 		return $this;
+	}
+
+	public function attribute_exists($offset)
+	{
+		return (isset($this->attributes[$offset]) OR $this->param_exists($offset));
 	}
 
 	public function get_attribute($offset)
@@ -153,6 +190,10 @@ class Request extends \Db\Classes\AbstractModel implements \Db\Interfaces\Model 
 		if (isset($this->attributes[$offset]))
 		{
 			return $this->attributes[$offset];
+		}
+		elseif ($this->param_exists($offset))
+		{
+			return $this->get_param($offset);
 		}
 		else
 		{
